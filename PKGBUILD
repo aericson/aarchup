@@ -11,8 +11,8 @@ arch=('i686' 'x86_64')
 license="GPL"
 depends=('pacman' 'libnotify')
 makedepends=('libnotify' 'autoconf' 'gzip')
-source=($pkgname-$pkgver.tar.gz)
-md5sums=('7c1eb2d83742c4e1c9e6bab427dc0a7f')
+source=(https://github.com/downloads/aericson/aarchup/$pkgname-$pkgver.tar.gz)
+md5sums=('f651ce7f513b6d65ad64682e007da892')
 
 build() {
 	cd $pkgname-$pkgver/src
