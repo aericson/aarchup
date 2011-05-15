@@ -1,0 +1,52 @@
+# Copyright 2010 Rorschach <r0rschach@lavabit.com>
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>. 
+
+CC = @CC@
+VERSION = @VERSION@
+CFLAGS = @CFLAGS@ -Wall
+LIBS = @LIBS@
+
+man_MANS = aarchup.1
+
+all: aarchup-bin aarchup-man
+
+aarchup-bin: aarchup.c
+	$(CC) $(CFLAGS) -DVERSION=\"$(VERSION)\" `pkg-config --cflags --libs gtk+-2.0` aarchup.c -o aarchup $(LIBS)
+
+aarchup-man: aarchup.1
+	gzip aarchup.1
+
+install:
+	install -Dm755 aarchup $(DESTDIR)/usr/bin/aarchup
+	install -Dm744 README $(DESTDIR)/usr/share/doc/aarchup/README
+	install -Dm744 INSTALL $(DESTDIR)/usr/share/doc/aarchup/INSTALL
+	install -Dm744 COPYING $(DESTDIR)/usr/share/doc/aarchup/COPYING
+	install -Dm744 VERSION $(DESTDIR)/usr/share/doc/aarchup/VERSION
+	install -Dm744 CHANGELOG $(DESTDIR)/usr/share/doc/aarchup/CHANGELOG
+	install -Dm744 cronhourly.example $(DESTDIR)/usr/share/doc/aarchup/cronhourly.example
+	install -Dm644 aarchup.1.gz $(DESTDIR)/usr/share/man/man1/aarchup.1.gz
+	install -Dm755 aarchupstartup.sh $(DESTDIR)/usr/share/doc/aarchup/aarchupstartup.example
+	install -Dm744 aarchup.desktop $(DESTDIR)/usr/share/doc/aarchup/aarchup.desktop
+	install -Dm774 archlogo.svg $(DESTDIR)/usr/share/aarchup/archlogo.svg
+
+uninstall:
+	rm -f $(DESTDIR)/usr/bin/aarchup
+	rm -rf $(DESTDIR)/usr/share/doc/aarchup
+	rm -f $(DESTDIR)/usr/share/man/man1/aarchup.1.gz
+	rm -rf $(DESTDIR)/usr/share/aarchup
+
+distclean:
+	rm -rf aarchup autoscan.log autom4te.cache Makefile configure.scan configure config.*
+	gunzip aarchup.1.gz

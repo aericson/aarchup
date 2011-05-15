@@ -1,0 +1,110 @@
+.TH "aarchup" "1" "MAY 2011" "aericson <de.ericson@gmail.com>" ""
+.SH "NAME"
+aarchup \- lightweight pacman update notifier, a fork from archup by Rorschach
+.SH "SYNOPSIS"
+\fIaarchup\fR [options]
+.SH "DESCRIPTION"
+aarchup is a small C application which informs the user when system\-updates for Archlinux are available. It's licenced under the GPLv3. In contrast to other update notifiers aarchup is intended to be lightweight and just do what it should, notify about possible updates.
+
+aarchup uses GTk+ and libnotify to show a desktop notification if updates are available. It follows the unix-philosophy of "just doing one thing, but doing it well". It just notifies about new updates but the packagedatabase has to be updated by the user (better said a cronjob). With a cronjob aarchup can be used to regulary check for new updates and get a desktop notification if there are some. It can also runs on it's own and check for updates regularly.
+.SH "OPTIONS"
+          --command|-c [value]        Set the command which gives out the list of updates.
+                                      The default is /usr/bin/pacman -Qu
+          --icon|-p [value]           Shows the icon, whose path has been given as value, in the notification.
+                                      By default no icon is shown.
+          --maxentries|-m [value]     Set the maximum number of packages which shall be displayed in the notification.
+                                      The default value is 30.
+          --timeout|-t [value]        Set the timeout after which the notification disappers in seconds.
+                                      The default value is 3600 seconds, which is 1 hour.
+          --uid|-i [value]            Set the uid of the process.
+                                      The default is to keep the uid of the user who started aarchup.
+                                      !!You should change this if root is executing aarchup!!
+          --urgency|-u [value]        Set the libnotify urgency-level. Possible values are: low, normal and critical.
+                                      The default value is normal. With changing this value you can change the color of the notification.
+          --loop-time|-l [value]      When this is used the program will control the check for updates in the inverval of minutes specified,
+                                      if none is specified, the default(60) will be used. See: Loop-time above.
+          --help                      Prints this help.
+          --version                   Shows the version.
+.SH "CONFIGURATION"
+aarchup can simply be invoked by executing it from the commandline. But you surely want to automate this task and let aarchup continouisly be run with a cronjob.
+There are two ways of automating aarchup runs. One setup is to use the --loop-time option and the other is using a cronjob.
+
+\fILoop-time\fR
+
+When using the --loop-time option the program will run endless. This has an advantage over a cronjob. For example on gnome3 when running aarchup in a cronjob, if you get more than one notification of updates and you don't close them, they will keep getting stacked and you gonna end up with a few notifications(of the same thing) at the notification bar. Which can get really annoying to close manually.
+When the program is running on its own it can keep track of it's notifications and update them as needed instead of creating new ones.
+In case you would like to use this method on startup copy /usr/share/doc/aarchup/aarchup.desktop to /home/user/.config/autostart
+
+.PP
+         $ sudo cp /usr/share/doc/aarchup/aarchup.desktop /home/user/.config/autostart/
+.PP
+where user is your username.
+Copy the file /usr/share/doc/aarchup/aarchupstartup.example
+.PP
+         $ sudo cp /usr/share/doc/aarchup/aarchupstartup.example /usr/share/aarchup/aarchupstartup.sh
+.PP
+Edit the new file with different options if needed.
+You will also need to allow pacman -Sy to be executed without asking for sudo's password.
+Edit visudo:
+.PP
+         $ sudo visudo
+.PP
+Add the following line to the end of the file.
+.PP
+         user ALL=(ALL) NOPASSWD: /usr/bin/pacman -Sy
+.PP
+where user is your username.
+
+Archup will run on next boot or you can manually start it running /usr/share/aarchup/aarchupstartup.sh
+
+
+\fIHourly\fR
+
+The most simple setup is for a single user system where you want to check once an hour for updates. In this case just copy the /usr/share/doc/aarchup/cronhourly.example to /etc/cron.hourly/aarchup.sh
+.PP
+          $ sudo cp /usr/share/doc/aarchup/cronhourly.example /etc/cron.hourly/aarchup.sh
+.PP
+and make it executable with
+.PP
+          $ sudo chmod 755 /etc/cron.hourly/aarchup.sh
+.PP 
+Finally open this file with a texteditor of your choice and change the username of the arch_user value with your username.
+
+Now every hour your package database will get updated and after that aarchup will be executed. If there are updates aarchup shows a desktop notifiaction, if there are no updates nothing will happen. The desktop notification will automatically disappear after 60min or if you simply click on it.
+
+\fIother Intervals\fR
+
+If you want to execute aarchup at other intervals than hourly you are free to do so simply by setting up a custom cronjob (read manpage of crond for more on this).
+
+Some hints on this:
+ * you can adjust the timeout value, before the notification will disappear with the --timeout option of aarchup
+ * you should take care that the packagedatabase gets updated by executing /usr/bin/pacman -Sy before aarchup gets executed
+ * if you wanna start a graphical application from a cronjob you propably have to set the DISPLAY and XAUTHORITY values
+The best is taking a look at /usr/share/doc/aarchup/cronhourly.example and get your inspiration there.
+
+.SH "AUTHORS"
+Written originally by Rorschach.
+aarchup by aericson.
+.SH "CREDITS"
+Most of the credits goes to Rorshach for the original archup.
+The features made in the fork was made by aericson and can
+be found in the CHANGELOG file.
+Also some minor changes were made by Andrew Kravchuk and can be
+found at his github(https://github.com/lockie/archup) logs.
+.SH "REPORTING BUGS"
+Bugs? If you find one, send an email to de.ericson@gmail.com
+.SH "COPYRIGHT"
+Copyright 2011 aericson <de.ericson@gmail.com>
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>. 

@@ -1,0 +1,20 @@
+aarchup-1.5 (15/05/2011)
+    * added --loop-time flag to allow use without cronjob, check man pages for advantages
+    * added default icon
+### ORIGINAL ARCHUP ###
+archup-1.4
+    * added --icon|-p flag to show an icon in the notification
+archup-1.3 (03/04/2010)
+	* some code cleanup, updated docs, ...
+	* added --uid|-i flag to allow dropping the rights if executed as root-cronjob
+	* added --command|-c flag to allow a custom updatelist retrival command
+	* added --urgency|-u flag to choose the urgencylevel and thus the color of the notification
+archup-1.2 (21/03/2010)
+	* improved sourcecode documentation
+	* added commandline options (--help,--version,--timeout|-tm,--maxentries|-m)
+	* moved timeout and maxentries values from compiletime-options to runtime-options
+	* replaced the static memory managment with a dynamic one using realloc
+	* added manpage
+	* added $DESTDIR support in the make install and make uninstall commands
+archup-1.1 (20/03/2010)
+archup-1.0 (no public release)
