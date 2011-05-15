@@ -1,0 +1,35 @@
+# Copyright 2010 Rorschach <r0rschach@lavabit.com>
+# 2011 aericson <de.ericson@gmail.com>
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+aarchup (https://github.com/aericson/aarchup) is a small C application which informs the user when system-updates for Archlinux are available. It's licenced under the GPLv3. In contrast to other update notifiers aarchup is intended to be lightweight and just do what it should: notify about possible updates.
+It is forked from Rorschach's archup (http://www.nongnu.org/archup/).
+
+aarchup uses GTk+ and libnotify to show a desktop notification if updates are available. It follows the unix-philosophy of "just doing one thing, but doing  it  well".  It just notifies about new updates but the packagedatabase has to be updated by the user (better said a cronjob). It  can be used to regulary check for new updates and get a desktop notification if there are some.
+
+Read manpages for configuration.
+
+Thanks
+
+Rorschach for the great tool and the credits are all his.
+The only reason why I made this fork was to add a few features that was needed by me.
+
+Bugs
+
+Bugs can be repported by e-mails(de.ericson@gmail.com) or at git.
+
+Contact
+
+You can contact me with de.ericson@gmail.com
