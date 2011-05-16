@@ -1,3 +1,5 @@
+aarchup-1.5.1 (15/05/2011)
+    * fixed memory allocation errors noted by rck at (https://bbs.archlinux.org/viewtopic.php?pid=875332#p875332)
 aarchup-1.5 (15/05/2011)
     * added --loop-time flag to allow use without cronjob, check man pages for advantages
     * added default icon

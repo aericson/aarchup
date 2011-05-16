@@ -23,7 +23,7 @@
 #include <ctype.h>
 #include <unistd.h>
 
-#define VERSION_NUMBER 1.5
+#define VERSION_NUMBER "1.5.1"
 
 /* Prints the help. */
 int print_help(char *name)
@@ -56,7 +56,7 @@ int print_help(char *name)
 /* Prints the version. */
 int print_version()
 {
-    printf("aarchup %1.1f\n",VERSION_NUMBER);
+    printf("aarchup %s\n",VERSION_NUMBER);
     printf("Copyright 2010 Rorschach <r0rschach@lavabit.com>,\n2011 Andrew Kravchuk <awkravchuk@gmail.com> and aericson <de.ericson@gmail.com>\n");
     printf("License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>.\n");
     printf("This is free software: you are free to change and redistribute it.\n");
@@ -215,7 +215,7 @@ int main(int argc, char **argv)
         if(will_loop)
             system("sudo /usr/bin/pacman -Sy 2> /dev/null");
         got_updates = FALSE;
-        output_string = malloc(23);
+        output_string = malloc(24);
         sprintf(output_string,"There are updates for:\n");
 
         i = 0;
@@ -283,9 +283,9 @@ int main(int argc, char **argv)
             notify_notification_set_urgency (my_notify,urgency);
             /* We finally show the notification, */	
             notify_notification_show(my_notify,&error);
-            /* Should be safe now */
-            free(output_string);
         }
+        /* Should be safe now */
+        free(output_string);
         if(will_loop)
             sleep(loop_time);
     }while(will_loop);
