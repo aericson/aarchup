@@ -12,7 +12,8 @@ license="GPL"
 depends=('pacman' 'libnotify')
 makedepends=('libnotify' 'autoconf' 'gzip')
 source=(https://github.com/downloads/aericson/aarchup/$pkgname-$pkgver.tar.gz)
-md5sums=('f651ce7f513b6d65ad64682e007da892')
+md5sums=('9e4dc9b63f99ba4cbf164a4c9068cab8')
+optdepends=('cower: AUR support(--aur)')
 
 build() {
 	cd $pkgname-$pkgver/src

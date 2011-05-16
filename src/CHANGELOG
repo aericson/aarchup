@@ -1,6 +1,7 @@
 aarchup-1.5 (15/05/2011)
     * added --loop-time flag to allow use without cronjob, check man pages for advantages
     * added default icon
+    * added --aur flag to allow checking for updates in AUR. Will need cower installed.
 ### ORIGINAL ARCHUP ###
 archup-1.4
     * added --icon|-p flag to show an icon in the notification

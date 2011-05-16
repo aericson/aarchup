@@ -25,6 +25,7 @@ aarchup uses GTk+ and libnotify to show a desktop notification if updates are av
                                       if none is specified, the default(60) will be used. See: Loop-time above.
           --help                      Prints this help.
           --version                   Shows the version.
+          --aur                       Check aur for new packages too. Will need cower installed.
 .SH "CONFIGURATION"
 aarchup can simply be invoked by executing it from the commandline. But you surely want to automate this task and let aarchup continouisly be run with a cronjob.
 There are two ways of automating aarchup runs. One setup is to use the --loop-time option and the other is using a cronjob.
@@ -43,7 +44,7 @@ Copy the file /usr/share/doc/aarchup/aarchupstartup.example
 .PP
          $ sudo cp /usr/share/doc/aarchup/aarchupstartup.example /usr/share/aarchup/aarchupstartup.sh
 .PP
-Edit the new file with different options if needed.
+Edit the new file with different options if needed. Include --aur if you want to check for updates in AUR(you will need cower installed).
 You will also need to allow pacman -Sy to be executed without asking for sudo's password.
 Edit visudo:
 .PP

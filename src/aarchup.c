@@ -48,6 +48,7 @@ int print_help(char *name)
     printf("                                      For more information on it check man.\n");
     printf("          --help                      Prints this help.\n");
     printf("          --version                   Shows the version.\n");
+    printf("          --aur                       Check aur for new packages too. Will need cower installed.\n");
     printf("\nMore informations can be found in the manpage.\n");
     exit(0);
 }
@@ -63,6 +64,26 @@ int print_version()
     exit(0);
 }
 
+/* Parse cower -u output. 
+ * Format: ":: package_name version -> new_version" */
+void parse(char *line){
+    int i, j;
+    int llen = strlen(line);
+    /* Find first space */
+    for(i=0;!isspace(line[i]) && i < llen; ++i);
+    /* Copy package_name */
+    for(j=0, ++i;!isspace(line[i]) && i < llen;++j, ++i)
+        line[j] = line[i];
+    i = llen - 1;
+    line[j++] = ' ';
+    /* Find first char of new_version */
+    while(line[i]!=' ')
+        --i;
+    for(i++;line[i] != '\0'; ++i)
+        line[j++] = line[i];
+    line[j] = '\0';
+}
+
 int main(int argc, char **argv)
 {
     typedef int bool;
@@ -75,7 +96,7 @@ int main(int argc, char **argv)
     /* Restricts the number of packages which should be included in the desktop notification.*/
     int max_number_out = 30;
     int loop_time = 3600;
-    bool will_loop = FALSE;
+    bool will_loop = FALSE, aur = FALSE;
     /* Sets the urgency-level to normal. */
     urgency = NOTIFY_URGENCY_NORMAL;
     /* The default command to get a list of packages to update. */
@@ -161,12 +182,16 @@ int main(int argc, char **argv)
                 loop_time = atoi(argv[i+1]) * 60;
             }
         }
+        else if(strcmp(argv[i], "--aur") == 0){
+            aur = TRUE;
+        }
 
     }
 
     /* Those are needed by libnotify. */
     char *name = "arch_update_check";
     char *category = "update";
+    char *cower = "cower -u";
     NotifyNotification *my_notify = NULL;
     GError *error = NULL;
 
@@ -216,7 +241,24 @@ int main(int argc, char **argv)
 
         /* We close the popen stream if we don't need it anymore. */
         pclose(pac_out);
-
+        /* aur check */
+        if(aur && i < max_number_out){
+            /* call cower */
+            pac_out = popen(cower, "r");
+            while(fgets(line,BUFSIZ,pac_out)){
+                if(i >= max_number_out){
+                    break;
+                }
+                i++;
+                got_updates = TRUE;
+                parse(line);
+                llen = strlen(line);
+                output_string = (char *)realloc(output_string,strlen(output_string)+1+llen+2);
+                strncat(output_string,"- ", 2);
+                strncat(output_string,line,llen);
+            }
+            pclose(pac_out);
+        }
         /* If we got updates we are showing them in a notification */
         if (got_updates == TRUE)
         {
