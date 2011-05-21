@@ -22,4 +22,4 @@ arch_user=rorschach
 if [ -z "$(pgrep pacman)" ];then
         /usr/bin/pacman -Sy > /dev/null
 fi
-su - $arch_user -c"XAUTHORITY=/home/$arch_user/.Xauthority DISPLAY=:0.0 /usr/bin/aarchup --uid $(id -u $arch_user) --icon /usr/share/aarchup/archlogo.svg
+su - $arch_user -c "XAUTHORITY=/home/$arch_user/.Xauthority DISPLAY=:0.0 /usr/bin/aarchup --uid $(id -u $arch_user) --icon /usr/share/aarchup/archlogo.svg"
