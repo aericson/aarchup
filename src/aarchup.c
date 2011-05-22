@@ -22,8 +22,9 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include <unistd.h>
+#include <time.h>
 
-#define VERSION_NUMBER "1.5.1"
+#define VERSION_NUMBER "1.5.3"
 
 /* Prints the help. */
 int print_help(char *name)
@@ -49,6 +50,7 @@ int print_help(char *name)
     printf("          --help                      Prints this help.\n");
     printf("          --version                   Shows the version.\n");
     printf("          --aur                       Check aur for new packages too. Will need cower installed.\n");
+    printf("          -d                          Print debug info.\n");
     printf("\nMore informations can be found in the manpage.\n");
     exit(0);
 }
@@ -96,7 +98,7 @@ int main(int argc, char **argv)
     /* Restricts the number of packages which should be included in the desktop notification.*/
     int max_number_out = 30;
     int loop_time = 3600;
-    bool will_loop = FALSE, aur = FALSE;
+    bool will_loop = FALSE, aur = FALSE, debug = FALSE;
     /* Sets the urgency-level to normal. */
     urgency = NOTIFY_URGENCY_NORMAL;
     /* The default command to get a list of packages to update. */
@@ -185,6 +187,9 @@ int main(int argc, char **argv)
         else if(strcmp(argv[i], "--aur") == 0){
             aur = TRUE;
         }
+        else if(strcmp(argv[i], "-d") == 0){
+            debug = TRUE;
+        }
 
     }
 
@@ -204,6 +209,8 @@ int main(int argc, char **argv)
     int llen = 0;
     char line[BUFSIZ];
 
+    /* For debug */
+    time_t now;
 
     do{
         /* We get stdout of pacman -Qu into the pac_out stream.
@@ -212,8 +219,11 @@ int main(int argc, char **argv)
            and allocate dynamically more memory for our output. */  
         pac_out = popen(command,"r");
         /* If isn't set to loop than probably pacman's database was alreald synced  */
-        if(will_loop)
+        if(will_loop){
+            if(debug)
+                printf("DEBUG: loop-time is on, running pacman -Sy\n");
             system("sudo /usr/bin/pacman -Sy 2> /dev/null");
+        }
         got_updates = FALSE;
         output_string = malloc(24);
         sprintf(output_string,"There are updates for:\n");
@@ -224,10 +234,16 @@ int main(int argc, char **argv)
             /* We leave the loop if we have more updates than we want to show in the notification. */
             if (i >= max_number_out)
             {
+                if(debug)
+                    printf("DEBUG: Maximum number of updates to list reached, stopping\n");
                 break;
             }
             i++;
-
+            if(debug){
+                printf("DEBUG: Found update %s", line);
+                if(line[strlen(line)-1] != '\n')
+                    printf("\n");
+            }
             /* If we are in this loop, we got updates waiting. */
             got_updates = TRUE;
             /* We get the length of the current line. */
@@ -243,15 +259,24 @@ int main(int argc, char **argv)
         pclose(pac_out);
         /* aur check */
         if(aur && i < max_number_out){
+            if(debug)
+                printf("DEBUG: aur is on, running cower -u\n");
             /* call cower */
             pac_out = popen(cower, "r");
             while(fgets(line,BUFSIZ,pac_out)){
                 if(i >= max_number_out){
+                    if(debug)
+                        printf("DEBUG: Maximum number of updates to list reached, stopping\n");
                     break;
                 }
                 i++;
                 got_updates = TRUE;
                 parse(line);
+                if(debug){
+                    printf("DEBUG(aur): Found update %s", line);
+                    if(line[strlen(line)-1] != '\n')
+                        printf("\n");
+                }
                 llen = strlen(line);
                 output_string = (char *)realloc(output_string,strlen(output_string)+1+llen+2);
                 strncat(output_string,"- ", 2);
@@ -262,6 +287,8 @@ int main(int argc, char **argv)
         /* If we got updates we are showing them in a notification */
         if (got_updates == TRUE)
         {
+            if(debug)
+                printf("DEBUG: Got updates will show notification\n");
             /* Initiates the libnotify when needed. */	
             if(!notify_is_initted())
                 notify_init(name);
@@ -282,12 +309,26 @@ int main(int argc, char **argv)
             /* We set the urgency, which can be changed with a commandline option */
             notify_notification_set_urgency (my_notify,urgency);
             /* We finally show the notification, */	
-            notify_notification_show(my_notify,&error);
+            bool sucess = notify_notification_show(my_notify,&error);
+            if(debug){
+                if(sucess)
+                    printf("DEBUG: Notification was shown with sucess.\n");
+                else{
+                    printf("DEBUG: Notification failed, reason:\n\t");
+                    printf("[%i]%s\n", error->code, error->message);
+                }
+            }
         }
         /* Should be safe now */
         free(output_string);
-        if(will_loop)
+        if(will_loop){
+            if(debug){
+                time(&now);
+                printf("DEBUG: Time now %s", ctime(&now));
+                printf("DEBUG: Next run will be in %i minutes\n", loop_time/60);
+            }
             sleep(loop_time);
+        }
     }while(will_loop);
     /* and deinitialize the libnotify afterwards. */    
     notify_uninit();
