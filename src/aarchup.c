@@ -24,7 +24,7 @@
 #include <unistd.h>
 #include <time.h>
 
-#define VERSION_NUMBER "1.5.3"
+#define VERSION_NUMBER "1.5.4"
 
 /* Prints the help. */
 int print_help(char *name)
@@ -213,17 +213,19 @@ int main(int argc, char **argv)
     time_t now;
 
     do{
-        /* We get stdout of pacman -Qu into the pac_out stream.
-           Remember we can't use fseek(stream,0,SEEK_END) with 
-           popen-streams, thus we are reading BUFSIZ sized lines
-           and allocate dynamically more memory for our output. */  
-        pac_out = popen(command,"r");
         /* If isn't set to loop than probably pacman's database was alreald synced  */
         if(will_loop){
             if(debug)
                 printf("DEBUG: loop-time is on, running pacman -Sy\n");
             system("sudo /usr/bin/pacman -Sy 2> /dev/null");
         }
+        /* We get stdout of pacman -Qu into the pac_out stream.
+           Remember we can't use fseek(stream,0,SEEK_END) with 
+           popen-streams, thus we are reading BUFSIZ sized lines
+           and allocate dynamically more memory for our output. */  
+        if(debug)
+            printf("DEBUG: running command: %s\n", command);
+        pac_out = popen(command,"r");
         got_updates = FALSE;
         output_string = malloc(24);
         sprintf(output_string,"There are updates for:\n");
@@ -262,6 +264,8 @@ int main(int argc, char **argv)
             if(debug)
                 printf("DEBUG: aur is on, running cower -u\n");
             /* call cower */
+            if(debug)
+                printf("DEBUG: running command: %s\n", command);
             pac_out = popen(cower, "r");
             while(fgets(line,BUFSIZ,pac_out)){
                 if(i >= max_number_out){

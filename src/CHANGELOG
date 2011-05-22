@@ -1,3 +1,5 @@
+aarchup-1.5.4 (22/05/2011)
+    * fixed a bug that was delaying notifications until next run in --loop-time option. thanks lucke
 aarchup-1.5.3 (21/05/2011)
     * added -d to print debug info
 aarchup-1.5.2 (21/05/2011)
