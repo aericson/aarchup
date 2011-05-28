@@ -24,7 +24,7 @@
 #include <unistd.h>
 #include <time.h>
 
-#define VERSION_NUMBER "1.5.4"
+#define VERSION_NUMBER "1.5.5"
 
 /* Prints the help. */
 int print_help(char *name)
@@ -265,7 +265,7 @@ int main(int argc, char **argv)
                 printf("DEBUG: aur is on, running cower -u\n");
             /* call cower */
             if(debug)
-                printf("DEBUG: running command: %s\n", command);
+                printf("DEBUG: running command: %s\n", cower);
             pac_out = popen(cower, "r");
             while(fgets(line,BUFSIZ,pac_out)){
                 if(i >= max_number_out){
