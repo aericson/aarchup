@@ -24,7 +24,7 @@
 #include <unistd.h>
 #include <time.h>
 
-#define VERSION_NUMBER "1.5.5"
+#define VERSION_NUMBER "1.5.6"
 
 /* Prints the help. */
 int print_help(char *name)
@@ -194,7 +194,7 @@ int main(int argc, char **argv)
     }
 
     /* Those are needed by libnotify. */
-    char *name = "arch_update_check";
+    char *name = "New Updates";
     char *category = "update";
     char *cower = "cower -u";
     NotifyNotification *my_notify = NULL;
@@ -267,11 +267,19 @@ int main(int argc, char **argv)
             if(debug)
                 printf("DEBUG: running command: %s\n", cower);
             pac_out = popen(cower, "r");
+            bool first = TRUE;
+            char *aur_header = "AUR updates:\n";
             while(fgets(line,BUFSIZ,pac_out)){
                 if(i >= max_number_out){
                     if(debug)
                         printf("DEBUG: Maximum number of updates to list reached, stopping\n");
                     break;
+                }
+                if(first){
+                    llen = strlen(aur_header);
+                    output_string = (char *)realloc(output_string,strlen(output_string)+1+llen);
+                    strncat(output_string, aur_header, llen);
+                    first = FALSE;
                 }
                 i++;
                 got_updates = TRUE;
@@ -303,9 +311,9 @@ int main(int argc, char **argv)
             }
             /* Constructs the notification or update. */
             if(!my_notify)
-                my_notify = notify_notification_new("New updates for Archlinux available!",output_string,icon);
+                my_notify = notify_notification_new("New updates for Arch Linux available!",output_string,icon);
             else
-                notify_notification_update(my_notify, "New updates for Archlinux available!",output_string,icon);
+                notify_notification_update(my_notify, "New updates for Arch Linux available!",output_string,icon);
             /* Sets the timeout until the notification disappears. */
             notify_notification_set_timeout(my_notify,timeout);
             /* We set the category.*/

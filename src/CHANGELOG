@@ -1,3 +1,7 @@
+aarchup-1.5.6 (29/05/2011)
+    * changed titles for notifications
+    * added subdivision for regular updates and AUR updates
+    more info: https://bbs.archlinux.org/viewtopic.php?pid=940866#p940866
 aarchup-1.5.5 (22/05/2011)
     * bug fixes and edited cronhourly.example
 aarchup-1.5.4 (22/05/2011)
