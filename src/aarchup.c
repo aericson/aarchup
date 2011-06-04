@@ -24,7 +24,7 @@
 #include <unistd.h>
 #include <time.h>
 
-#define VERSION_NUMBER "1.5.6"
+#define VERSION_NUMBER "1.5.7"
 
 /* Prints the help. */
 int print_help(char *name)
@@ -51,6 +51,9 @@ int print_help(char *name)
     printf("          --version                   Shows the version.\n");
     printf("          --aur                       Check aur for new packages too. Will need cower installed.\n");
     printf("          -d                          Print debug info.\n");
+    printf("          --ftimeout [value]           Program will manually enforce timeout for closing notification.\n");
+    printf("                                      Do NOT use with --timeout, if --timeout works or without --loop-time [value].\n");
+    printf("                                      The value for this option should be in minutes.\n");
     printf("\nMore informations can be found in the manpage.\n");
     exit(0);
 }
@@ -98,6 +101,7 @@ int main(int argc, char **argv)
     /* Restricts the number of packages which should be included in the desktop notification.*/
     int max_number_out = 30;
     int loop_time = 3600;
+    int manual_timeout = 0;
     bool will_loop = FALSE, aur = FALSE, debug = FALSE;
     /* Sets the urgency-level to normal. */
     urgency = NOTIFY_URGENCY_NORMAL;
@@ -190,7 +194,19 @@ int main(int argc, char **argv)
         else if(strcmp(argv[i], "-d") == 0){
             debug = TRUE;
         }
-
+        else if(strcmp(argv[i], "--ftimeout") == 0){
+            if(argc - 1 != i && isdigit(*argv[i+1])){
+                manual_timeout = atoi(argv[i+1]) * 60;
+                if(!will_loop){
+                    printf("--ftimeout can't be used without or before --loop-time\n");
+                    exit(1);
+                }
+                if(manual_timeout > loop_time){
+                    printf("Please set a value for --ftimeout that is higher than --loop-time\n");
+                    exit(1);
+                }
+            }
+        }
     }
 
     /* Those are needed by libnotify. */
@@ -211,6 +227,9 @@ int main(int argc, char **argv)
 
     /* For debug */
     time_t now;
+
+    /* For manual timeout */
+    int offset = 0;
 
     do{
         /* If isn't set to loop than probably pacman's database was alreald synced  */
@@ -321,15 +340,47 @@ int main(int argc, char **argv)
             /* We set the urgency, which can be changed with a commandline option */
             notify_notification_set_urgency (my_notify,urgency);
             /* We finally show the notification, */	
-            bool sucess = notify_notification_show(my_notify,&error);
+            bool success = notify_notification_show(my_notify,&error);
             if(debug){
-                if(sucess)
-                    printf("DEBUG: Notification was shown with sucess.\n");
+                if(success)
+                    printf("DEBUG: Notification was shown with success.\n");
                 else{
                     printf("DEBUG: Notification failed, reason:\n\t");
                     printf("[%i]%s\n", error->code, error->message);
                 }
             }
+            if(manual_timeout && success && will_loop){
+                if(debug)
+                    printf("DEBUG: Will close notification in %i minutes(this time will be reduced from the loop-time).\n", manual_timeout/60);
+                sleep(manual_timeout);
+                offset = manual_timeout;
+                bool success = notify_notification_close(my_notify, &error);
+                if(debug){
+                    if(success)
+                        printf("DEBUG: Notification closed.\n");
+                    else{
+                        printf("DEBUG: Failed to close, reason:\n\t");
+                        printf("[%i]%s\n", error->code, error->message);
+                    }
+                }
+            }
+        } else {
+            if(debug)
+                printf("DEBUG: No updates found.\n");
+            if(my_notify){
+                if(debug)
+                    printf("DEBUG: Previous notification found. Closing it in case it was still opened.\n");
+                bool success = notify_notification_close(my_notify, &error);
+                if(debug){
+                    if(success)
+                        printf("DEBUG: Notification closed.\n");
+                    else{
+                        printf("DEBUG: Failed to close, reason:\n\t");
+                        printf("[%i]%s\n", error->code, error->message);
+                    }
+                }
+            }
+
         }
         /* Should be safe now */
         free(output_string);
@@ -337,9 +388,10 @@ int main(int argc, char **argv)
             if(debug){
                 time(&now);
                 printf("DEBUG: Time now %s", ctime(&now));
-                printf("DEBUG: Next run will be in %i minutes\n", loop_time/60);
+                printf("DEBUG: Next run will be in %i minutes\n", (loop_time-offset)/60);
             }
-            sleep(loop_time);
+            sleep(loop_time-offset);
+            offset = 0;
         }
     }while(will_loop);
     /* and deinitialize the libnotify afterwards. */    

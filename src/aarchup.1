@@ -27,6 +27,10 @@ aarchup uses GTk+ and libnotify to show a desktop notification if updates are av
           --version                   Shows the version.
           --aur                       Check aur for new packages too. Will need cower installed.
           -d                          Print debug info.
+          --ftimeout [value]          Program will manually enforce timeout for closing notification.
+                                      Do NOT use with --timeout, if --timeout works or without --loop-time [value].
+                                      The value for this option should be in minutes.
+
 .SH "CONFIGURATION"
 aarchup can simply be invoked by executing it from the commandline. But you surely want to automate this task and let aarchup continouisly be run with a cronjob.
 There are two ways of automating aarchup runs. One setup is to use the --loop-time option and the other is using a cronjob.
