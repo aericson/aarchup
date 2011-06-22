@@ -23,8 +23,9 @@
 #include <ctype.h>
 #include <unistd.h>
 #include <time.h>
+#include <getopt.h>
 
-#define VERSION_NUMBER "1.5.7"
+#define VERSION_NUMBER "1.6"
 
 /* Prints the help. */
 int print_help(char *name)
@@ -50,10 +51,12 @@ int print_help(char *name)
     printf("          --help                      Prints this help.\n");
     printf("          --version                   Shows the version.\n");
     printf("          --aur                       Check aur for new packages too. Will need cower installed.\n");
-    printf("          -d                          Print debug info.\n");
-    printf("          --ftimeout [value]           Program will manually enforce timeout for closing notification.\n");
+    printf("          --debug|-d                  Print debug info.\n");
+    printf("          --ftimeout|-f [value]       Program will manually enforce timeout for closing notification.\n");
     printf("                                      Do NOT use with --timeout, if --timeout works or without --loop-time [value].\n");
     printf("                                      The value for this option should be in minutes.\n");
+    printf("          --ignore-disconnect          If this flag is set aarchup will notify you about new updates even if pacman -Sy failed.\n");
+    printf("                                      no point in using this without --loop-time.\n");
     printf("\nMore informations can be found in the manpage.\n");
     exit(0);
 }
@@ -62,7 +65,8 @@ int print_help(char *name)
 int print_version()
 {
     printf("aarchup %s\n",VERSION_NUMBER);
-    printf("Copyright 2010 Rorschach <r0rschach@lavabit.com>,\n2011 Andrew Kravchuk <awkravchuk@gmail.com> and aericson <de.ericson@gmail.com>\n");
+    printf("Copyright 2011 aericson <de.ericson@gmail.com>\n");
+    printf("Copyright 2010 Rorschach <r0rschach@lavabit.com>,\n2011 Andrew Kravchuk <awkravchuk@gmail.com>\n");
     printf("License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>.\n");
     printf("This is free software: you are free to change and redistribute it.\n");
     printf("There is NO WARRANTY, to the extent permitted by law.\n");
@@ -102,101 +106,196 @@ int main(int argc, char **argv)
     int max_number_out = 30;
     int loop_time = 3600;
     int manual_timeout = 0;
-    bool will_loop = FALSE, aur = FALSE, debug = FALSE;
+    static int help_flag = 0;
+    static int version_flag = 0;
+    static int aur = 0;
+    static int ignore_disc_flag = 0;
+    bool will_loop = FALSE, debug = FALSE, argv_dealloc = FALSE;
     /* Sets the urgency-level to normal. */
     urgency = NOTIFY_URGENCY_NORMAL;
     /* The default command to get a list of packages to update. */
     char *command = "/usr/bin/pacman -Qu";
     /* The default icon to show: none */
     gchar *icon = NULL;
+    
+    /* Try to read configuration file. */
+    GKeyFile *p_key_file;
+    GError *error = NULL;
+    p_key_file = g_key_file_new();
+    if(!g_key_file_load_from_file(
+                p_key_file, "/etc/aarchup.conf",
+                G_KEY_FILE_NONE,
+                &error)){
+        if(error->code != G_FILE_ERROR_NOENT){
+            g_warning("Impossible to load config file: %s\n", error->message);
+            g_error_free(error);
+            g_key_file_free(p_key_file);
+            exit(EXIT_FAILURE);
+        }
+    }
+    /* If config file load the args to argv */
+    if(!error){
+        gchar **k;
+        gsize c;
+        gchar *value;
+        /* check if --version or --help */
+        if(argc > 1){
+            if(strcmp(argv[1], "--version") == 0)
+                print_version();
+            if(strcmp(argv[1], "--help") == 0)
+                print_help(argv[0]);
+        }
+        k = g_key_file_get_keys(p_key_file, "main", &c, NULL);
+        int i = 0;
+        char **argvn = (char **)malloc(sizeof(char *)*(c*2+1));
+        argv_dealloc = TRUE;
+        argvn[0] = malloc(strlen(argv[0])+1);
+        strcpy(argvn[0], argv[0]);
+        argc = 1;
+        argv = argvn;
+        for(;k[i];++i){
+            argv[argc] = malloc(strlen(k[i]) + 3);
+            sprintf(argv[argc], "--%s", k[i]);
+            argc++;
+            value = g_key_file_get_string(p_key_file, "main", k[i], NULL);
+            if(value && strlen(value)> 0){
+                if(value[0]=='"'){
+                    int j;
+                    for(j=0;j<strlen(value)-1;++j)
+                        value[j] = value[j+1];
+                    value[strlen(value)-2] = '\0';                   
+                }
+                argv[argc] = malloc(strlen(value) + 1);
+                strcpy(argv[argc],value);
+                argc++;
+                g_free(value);
+            }
+        }
+        g_strfreev(k);
+    } else {
+        g_error_free(error);
+    }
+    g_key_file_free(p_key_file);
+    error = NULL;
 
     /* We parse the commandline options. */
-    int i;
-    for (i=1;i<argc;i++)
-    {
-        if ( strcmp(argv[i],"--help") == 0 )
+    int c;
+    while(1){
+        static struct option long_options[] = {
+            {"command", required_argument, 0, 'c'},
+            {"icon", required_argument, 0, 'p'},
+            {"maxentries", required_argument, 0, 'm'},
+            {"timeout", required_argument, 0, 't'},
+            {"uid", required_argument, 0, 'i'},
+            {"urgency", required_argument, 0, 'u'},
+            {"loop-time", required_argument, 0, 'l'},
+            {"help", no_argument, &help_flag, 1},
+            {"version", no_argument, &version_flag, 1},
+            {"aur", no_argument, &aur, 1},
+            {"ftimeout", required_argument, 0, 'f'},
+            {"debug", no_argument, 0, 'd'},
+            {"ignore-disconnect", no_argument, &ignore_disc_flag, 1},
+            {0, 0, 0, 0},
+        };
+        int option_index = 0;
+        c = getopt_long(argc, argv, "c:p:m:t:i:u:l:df:", long_options,
+                &option_index);
+        if(c == -1)
+            break;
+        switch(c)
         {
-            print_help(argv[0]);
-        } 
-        else if ( strcmp(argv[i],"--version") == 0 )
-        {
-            print_version();
-        }
-        else if  ( strcmp(argv[i],"--timeout") == 0 ||  strcmp(argv[i],"-t") == 0 )
-        {
-            /* If argv[i] is not the last command line option (because
-               if it is, there's no place left for the value) and the next
-               value is a digit, we take this as new value */
-            if ( (argc-1 != i) && isdigit(*argv[i+1]) )
-            {
-                timeout = atoi(argv[i+1])*1000;	
-            }
-        }
-        else if  ( strcmp(argv[i],"--maxentries") == 0 ||  strcmp(argv[i],"-m") == 0 )
-        {
-            if ( (argc-1 != i) && isdigit(*argv[i+1]) )
-            {
-                max_number_out = atoi(argv[i+1]);
-            }
-        }
-        else if  ( strcmp(argv[i],"--urgency") == 0 ||  strcmp(argv[i],"-u") == 0 )
-        {
-            if ( (argc-1 != i) )
-            {
-                if ( strcmp(argv[i+1],"low") == 0 )
-                {
-                    urgency=NOTIFY_URGENCY_LOW;
+            case 0:
+                if(long_options[option_index].flag)
+                    break;
+                if(debug){
+                    printf("DEBUG: erroropt: option %s", long_options[option_index].name);
+                    if(optarg)
+                        printf(" with args %s", optarg);
+                    printf("\n");
                 }
-                else if ( strcmp(argv[i+1],"normal") == 0 )
-                {
-                    urgency=NOTIFY_URGENCY_NORMAL;
-                }        
-                else if ( strcmp(argv[i+1],"critical") == 0 )
-                {
-                    urgency=NOTIFY_URGENCY_CRITICAL;
+                break;
+            case 'c':
+                command = optarg;
+                if(debug)
+                    printf("DEBUG: command set: %s\n", command);
+                break;
+            case 'p':
+                icon = optarg;
+                if(debug)
+                    printf("DEBUG: icon set: %s\n", icon);
+                break;
+            case 'm':
+                if(!isdigit(optarg[0])){
+                    printf("--maxentries argument needs to be a number\n");
+                    exit(1);
                 }
-            }
-        }
-        else if  ( strcmp(argv[i],"--command") == 0 ||  strcmp(argv[i],"-c") == 0 )
-        {
-            if ( (argc-1 != i) )
-            {
-                command = argv[i+1];
-            }
-        }
-        else if  ( strcmp(argv[i],"--uid") == 0 ||  strcmp(argv[i],"-i") == 0 )
-        {
-            if ( (argc-1 != i) && isdigit(*argv[i+1]) )
-            {
-                if ( setuid(atoi(argv[i+1])) != 0 )
+                max_number_out = atoi(optarg);
+                if(debug)
+                    printf("DEBUG: max_number set: %i\n", max_number_out);
+                break;
+            case 't':
+                if(!isdigit(optarg[0])){
+                    printf("--timeout argument needs to be a number\n");
+                    exit(1);
+                }
+                timeout = atoi(optarg)*1000;
+                if(debug)
+                    printf("DEBUG: timeout set: %i\n", timeout/1000);
+                break;
+            case 'i':
+                if(!isdigit(optarg[0])){
+                    printf("--uid argument needs to be a number\n");
+                    exit(1);
+                }
+                if ( setuid(atoi(optarg)) != 0 )
                 {
                     printf("Couldn't change to the given uid!\n");
                     exit(1);
                 }
-            }
-        }
-        else if  ( strcmp(argv[i],"--icon") == 0 ||  strcmp(argv[i],"-p") == 0 )
-        {
-            if ( (argc-1 != i) )
-            {
-                icon = argv[i+1];
-            }
-        }
-        else if(strcmp(argv[i], "--loop-time") == 0 || strcmp(argv[i],"-l")== 0){
-            will_loop = TRUE;
-            if(argc - 1 != i && isdigit(*argv[i+1])){
-                loop_time = atoi(argv[i+1]) * 60;
-            }
-        }
-        else if(strcmp(argv[i], "--aur") == 0){
-            aur = TRUE;
-        }
-        else if(strcmp(argv[i], "-d") == 0){
-            debug = TRUE;
-        }
-        else if(strcmp(argv[i], "--ftimeout") == 0){
-            if(argc - 1 != i && isdigit(*argv[i+1])){
-                manual_timeout = atoi(argv[i+1]) * 60;
+                if(debug)
+                    printf("DEBUG: uid setted.\n");
+                break;
+            case 'u':
+                if ( strcmp(optarg, "low") == 0 )
+                {
+                    urgency=NOTIFY_URGENCY_LOW;
+                }
+                else if ( strcmp(optarg, "normal") == 0 )
+                {
+                    urgency=NOTIFY_URGENCY_NORMAL;
+                }        
+                else if ( strcmp(optarg, "critical") == 0 )
+                {
+                    urgency=NOTIFY_URGENCY_CRITICAL;
+                }
+                else{
+                    printf("--urgency has to be 'low', 'normal' or 'critical\n");
+                    exit(1);
+                }
+                if(debug)
+                    printf("DEBUG: urgency set: %i\n", urgency);
+                break;
+            case 'l':
+                will_loop = TRUE;
+                if(!isdigit(optarg[0])){
+                    printf("--loop-time argument needs to be a number\n");
+                    exit(1);
+                }
+                loop_time = atoi(optarg) * 60;
+                if(debug)
+                    printf("DEBUG: loop_time set: %i\n", loop_time/60);
+                break;
+            case 'd':
+                debug = TRUE;
+                if(debug)
+                    printf("DEBUG: debug on\n");
+                break;
+            case 'f':
+                if(!isdigit(optarg[0])){
+                    printf("--ftimeout argument needs to be a number\n");
+                    exit(1);
+                }
+                manual_timeout = atoi(optarg) * 60;
                 if(!will_loop){
                     printf("--ftimeout can't be used without or before --loop-time\n");
                     exit(1);
@@ -205,16 +304,33 @@ int main(int argc, char **argv)
                     printf("Please set a value for --ftimeout that is higher than --loop-time\n");
                     exit(1);
                 }
-            }
-        }
+                if(debug)
+                    printf("DEBUG: manual_timeout: %i\n", manual_timeout/60);
+                break;
+            case '?':
+                print_help(argv[0]);
+                break;
+            default:
+                exit(1);
+        }        
     }
+
+    if(debug && !argv_dealloc)
+        printf("DEBUG: /etc/aarchup.conf was not found using args instead.\n");
+    if(version_flag)
+        print_version();
+    if(help_flag)
+        print_help(argv[0]);
+    if(debug && aur)
+        printf("DEBUG: aur is on\n");
+    if(debug && ignore_disc_flag)
+        printf("DEBUG: ignore-diconnect is on. Will ignore 'pacman -Sy' failure.\n");
 
     /* Those are needed by libnotify. */
     char *name = "New Updates";
     char *category = "update";
     char *cower = "cower -u";
     NotifyNotification *my_notify = NULL;
-    GError *error = NULL;
 
     /* Those are needed for the output. */
     char *output_string; 
@@ -236,7 +352,22 @@ int main(int argc, char **argv)
         if(will_loop){
             if(debug)
                 printf("DEBUG: loop-time is on, running pacman -Sy\n");
-            system("sudo /usr/bin/pacman -Sy 2> /dev/null");
+            int success = system("sudo pacman -Sy 2> /dev/null");
+            if(success != 0){
+                if(debug){
+                    printf("DEBUG: failed to do pacman -Sy\n");
+                    printf("DEBUG: it returned %i\n", success);
+                }
+                if(!ignore_disc_flag){
+                    if(debug){
+                        time(&now);
+                        printf("DEBUG: Time now %s", ctime(&now));
+                        printf("DEBUG: Next run will be in %i minutes\n", (loop_time-offset)/60);
+                    }
+                    sleep(loop_time-offset);
+                    offset = 0;
+                }
+            }
         }
         /* We get stdout of pacman -Qu into the pac_out stream.
            Remember we can't use fseek(stream,0,SEEK_END) with 
@@ -248,7 +379,7 @@ int main(int argc, char **argv)
         got_updates = FALSE;
         output_string = malloc(24);
         sprintf(output_string,"There are updates for:\n");
-
+        int i;
         i = 0;
         while (fgets(line,BUFSIZ,pac_out)) 
         {
@@ -349,6 +480,10 @@ int main(int argc, char **argv)
                     printf("[%i]%s\n", error->code, error->message);
                 }
             }
+            if(error){
+                g_error_free(error);
+                error = NULL;
+            }
             if(manual_timeout && success && will_loop){
                 if(debug)
                     printf("DEBUG: Will close notification in %i minutes(this time will be reduced from the loop-time).\n", manual_timeout/60);
@@ -362,6 +497,10 @@ int main(int argc, char **argv)
                         printf("DEBUG: Failed to close, reason:\n\t");
                         printf("[%i]%s\n", error->code, error->message);
                     }
+                }
+                if(error){
+                    g_error_free(error);
+                    error = NULL;
                 }
             }
         } else {
@@ -379,6 +518,10 @@ int main(int argc, char **argv)
                         printf("[%i]%s\n", error->code, error->message);
                     }
                 }
+                if(error){
+                    g_error_free(error);
+                    error = NULL;
+                }
             }
 
         }
@@ -394,6 +537,13 @@ int main(int argc, char **argv)
             offset = 0;
         }
     }while(will_loop);
+    if(argv_dealloc){
+        int i;
+        for(i=0; i< argc; ++i){
+            free(argv[i]);  
+        }
+        free(argv);
+    }
     /* and deinitialize the libnotify afterwards. */    
     notify_uninit();
 

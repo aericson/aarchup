@@ -1,3 +1,4 @@
+# Copyright 2011 aericson <de.ericson@gmail.com>
 # Copyright 2010 Rorschach <r0rschach@lavabit.com>
 #
 # This program is free software: you can redistribute it and/or modify
@@ -13,7 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-We need autoconf,gzip(for zipping the man page) and libevent for building aarchup. At runtime we need pacman and libevent.
+We need autoconf,gzip(for zipping the man page),gtk2 and libnotify for building aarchup. At runtime we need pacman, libnotify gtk2.
 
 Create the configure-script:
         $ autoconf

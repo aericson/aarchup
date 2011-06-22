@@ -1,4 +1,4 @@
-.TH "aarchup" "1" "MAY 2011" "aericson <de.ericson@gmail.com>" ""
+.TH "aarchup" "1" "JUN 2011" "aericson <de.ericson@gmail.com>" ""
 .SH "NAME"
 aarchup \- lightweight pacman update notifier, a fork from archup by Rorschach
 .SH "SYNOPSIS"
@@ -30,10 +30,35 @@ aarchup uses GTk+ and libnotify to show a desktop notification if updates are av
           --ftimeout [value]          Program will manually enforce timeout for closing notification.
                                       Do NOT use with --timeout, if --timeout works or without --loop-time [value].
                                       The value for this option should be in minutes.
+          --ignore-disconnect         If this flag is set aarchup will notify you about new updates even if pacman -Sy failed.
+                                      no point in using this without --loop-time.
+
 
 .SH "CONFIGURATION"
 aarchup can simply be invoked by executing it from the commandline. But you surely want to automate this task and let aarchup continouisly be run with a cronjob.
 There are two ways of automating aarchup runs. One setup is to use the --loop-time option and the other is using a cronjob.
+
+\fIConfiguration File\fR
+
+You can set up a configuration file instead of passing commandline arguments.
+Simple create the file /etc/aarchup.conf
+edit it with the following syntax:
+.PP
+    # Comments are ignored
+    # The [main] line defines the group main
+    # You need to include this and no arguments
+    # can be placed before it.
+    # also notice that all options should be in the long form
+    # ie: for loop-time use only loop-time do not try to use 'l' or '-l'
+    [main]
+    # Argument on the left then '=' then the value of it
+    # ie:
+    loop-time=30
+    # Arguments without a value must have the '=' sign
+    # ie:
+    aur=
+.PP
+Please notice that if you have the file /etc/aarchup.conf all arguments passed to aarchup will be ignored except --help and --version.
 
 \fILoop-time\fR
 
