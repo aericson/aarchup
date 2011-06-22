@@ -1,6 +1,6 @@
 aarchup-1.6 (22/06/2011)
     * wont notify about new updates when "pacman -Sy" fail, probably you don't have internet connection.
-      You can change this behavior with --ignore-disconnect. Forcing the check for updates ever after "pacman -Sy" fail.
+      You can change this behavior with --ignore-disconnect. Forcing the check for updates even after "pacman -Sy" fail.
     * better arguments parsing with getopt(GNU)
     * you can now optionaly use /etc/aarchup.conf instead of passing a bunch of arguments to the command-line.
       Check manpages for details.
