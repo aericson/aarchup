@@ -25,7 +25,7 @@
 #include <time.h>
 #include <getopt.h>
 
-#define VERSION_NUMBER "1.6"
+#define VERSION_NUMBER "1.6.1"
 
 /* Prints the help. */
 int print_help(char *name)
@@ -208,7 +208,7 @@ int main(int argc, char **argv)
                 if(long_options[option_index].flag)
                     break;
                 if(debug){
-                    printf("DEBUG: erroropt: option %s", long_options[option_index].name);
+                    printf("DEBUG(error): erroropt: option %s", long_options[option_index].name);
                     if(optarg)
                         printf(" with args %s", optarg);
                     printf("\n");
@@ -217,12 +217,12 @@ int main(int argc, char **argv)
             case 'c':
                 command = optarg;
                 if(debug)
-                    printf("DEBUG: command set: %s\n", command);
+                    printf("DEBUG(info): command set: %s\n", command);
                 break;
             case 'p':
                 icon = optarg;
                 if(debug)
-                    printf("DEBUG: icon set: %s\n", icon);
+                    printf("DEBUG(info): icon set: %s\n", icon);
                 break;
             case 'm':
                 if(!isdigit(optarg[0])){
@@ -231,7 +231,7 @@ int main(int argc, char **argv)
                 }
                 max_number_out = atoi(optarg);
                 if(debug)
-                    printf("DEBUG: max_number set: %i\n", max_number_out);
+                    printf("DEBUG(info): max_number set: %i\n", max_number_out);
                 break;
             case 't':
                 if(!isdigit(optarg[0])){
@@ -240,7 +240,7 @@ int main(int argc, char **argv)
                 }
                 timeout = atoi(optarg)*1000;
                 if(debug)
-                    printf("DEBUG: timeout set: %i\n", timeout/1000);
+                    printf("DEBUG(info): timeout set: %i\n", timeout/1000);
                 break;
             case 'i':
                 if(!isdigit(optarg[0])){
@@ -253,7 +253,7 @@ int main(int argc, char **argv)
                     exit(1);
                 }
                 if(debug)
-                    printf("DEBUG: uid setted.\n");
+                    printf("DEBUG(info): uid setted.\n");
                 break;
             case 'u':
                 if ( strcmp(optarg, "low") == 0 )
@@ -273,7 +273,7 @@ int main(int argc, char **argv)
                     exit(1);
                 }
                 if(debug)
-                    printf("DEBUG: urgency set: %i\n", urgency);
+                    printf("DEBUG(info): urgency set: %i\n", urgency);
                 break;
             case 'l':
                 will_loop = TRUE;
@@ -283,12 +283,12 @@ int main(int argc, char **argv)
                 }
                 loop_time = atoi(optarg) * 60;
                 if(debug)
-                    printf("DEBUG: loop_time set: %i\n", loop_time/60);
+                    printf("DEBUG(info): loop_time set: %i\n", loop_time/60);
                 break;
             case 'd':
                 debug = TRUE;
                 if(debug)
-                    printf("DEBUG: debug on\n");
+                    printf("DEBUG(info): debug on\n");
                 break;
             case 'f':
                 if(!isdigit(optarg[0])){
@@ -305,7 +305,7 @@ int main(int argc, char **argv)
                     exit(1);
                 }
                 if(debug)
-                    printf("DEBUG: manual_timeout: %i\n", manual_timeout/60);
+                    printf("DEBUG(info): manual_timeout: %i\n", manual_timeout/60);
                 break;
             case '?':
                 print_help(argv[0]);
@@ -316,15 +316,15 @@ int main(int argc, char **argv)
     }
 
     if(debug && !argv_dealloc)
-        printf("DEBUG: /etc/aarchup.conf was not found using args instead.\n");
+        printf("DEBUG(info): /etc/aarchup.conf was not found using args instead.\n");
     if(version_flag)
         print_version();
     if(help_flag)
         print_help(argv[0]);
     if(debug && aur)
-        printf("DEBUG: aur is on\n");
+        printf("DEBUG(info): aur is on\n");
     if(debug && ignore_disc_flag)
-        printf("DEBUG: ignore-diconnect is on. Will ignore 'pacman -Sy' failure.\n");
+        printf("DEBUG(info): ignore-diconnect is on. Will ignore 'pacman -Sy' failure.\n");
 
     /* Those are needed by libnotify. */
     char *name = "New Updates";
@@ -351,19 +351,20 @@ int main(int argc, char **argv)
         /* If isn't set to loop than probably pacman's database was alreald synced  */
         if(will_loop){
             if(debug)
-                printf("DEBUG: loop-time is on, running pacman -Sy\n");
+                printf("DEBUG(info): loop-time is on, running pacman -Sy\n");
             int success = system("sudo pacman -Sy 2> /dev/null");
             if(success != 0){
                 if(debug){
-                    printf("DEBUG: failed to do pacman -Sy\n");
-                    printf("DEBUG: it returned %i\n", success);
+                    printf("DEBUG(error): failed to do pacman -Sy\n");
+                    printf("DEBUG(error): it returned %i\n", success);
                 }
                 if(!ignore_disc_flag){
                     if(debug){
                         time(&now);
-                        printf("DEBUG: Time now %s", ctime(&now));
-                        printf("DEBUG: Next run will be in %i minutes\n", (loop_time-offset)/60);
+                        printf("DEBUG(info): Time now %s", ctime(&now));
+                        printf("DEBUG(info): Next run will be in %i minutes\n", (loop_time-offset)/60);
                     }
+                    fflush(stdout); // Make sure that all output was printed(needed if output is redirected to a log file)
                     sleep(loop_time-offset);
                     offset = 0;
                 }
@@ -374,7 +375,7 @@ int main(int argc, char **argv)
            popen-streams, thus we are reading BUFSIZ sized lines
            and allocate dynamically more memory for our output. */  
         if(debug)
-            printf("DEBUG: running command: %s\n", command);
+            printf("DEBUG(info): running command: %s\n", command);
         pac_out = popen(command,"r");
         got_updates = FALSE;
         output_string = malloc(24);
@@ -387,12 +388,12 @@ int main(int argc, char **argv)
             if (i >= max_number_out)
             {
                 if(debug)
-                    printf("DEBUG: Maximum number of updates to list reached, stopping\n");
+                    printf("DEBUG(info): Maximum number of updates to list reached, stopping\n");
                 break;
             }
             i++;
             if(debug){
-                printf("DEBUG: Found update %s", line);
+                printf("DEBUG(info): Found update %s", line);
                 if(line[strlen(line)-1] != '\n')
                     printf("\n");
             }
@@ -412,17 +413,17 @@ int main(int argc, char **argv)
         /* aur check */
         if(aur && i < max_number_out){
             if(debug)
-                printf("DEBUG: aur is on, running cower -u\n");
+                printf("DEBUG(info): aur is on, checking for updates in aur\n");
             /* call cower */
             if(debug)
-                printf("DEBUG: running command: %s\n", cower);
+                printf("DEBUG(info): running command: %s\n", cower);
             pac_out = popen(cower, "r");
             bool first = TRUE;
             char *aur_header = "AUR updates:\n";
             while(fgets(line,BUFSIZ,pac_out)){
                 if(i >= max_number_out){
                     if(debug)
-                        printf("DEBUG: Maximum number of updates to list reached, stopping\n");
+                        printf("DEBUG(info): Maximum number of updates to list reached, stopping\n");
                     break;
                 }
                 if(first){
@@ -435,7 +436,7 @@ int main(int argc, char **argv)
                 got_updates = TRUE;
                 parse(line);
                 if(debug){
-                    printf("DEBUG(aur): Found update %s", line);
+                    printf("DEBUG(info): Found update %s in aur", line);
                     if(line[strlen(line)-1] != '\n')
                         printf("\n");
                 }
@@ -450,7 +451,7 @@ int main(int argc, char **argv)
         if (got_updates == TRUE)
         {
             if(debug)
-                printf("DEBUG: Got updates will show notification\n");
+                printf("DEBUG(info): Got updates will show notification\n");
             /* Initiates the libnotify when needed. */	
             if(!notify_is_initted())
                 notify_init(name);
@@ -459,42 +460,61 @@ int main(int argc, char **argv)
             {
                 output_string[strlen(output_string)-1] = '\0';
             }
-            /* Constructs the notification or update. */
-            if(!my_notify)
-                my_notify = notify_notification_new("New updates for Arch Linux available!",output_string,icon);
-            else
-                notify_notification_update(my_notify, "New updates for Arch Linux available!",output_string,icon);
-            /* Sets the timeout until the notification disappears. */
-            notify_notification_set_timeout(my_notify,timeout);
-            /* We set the category.*/
-            notify_notification_set_category(my_notify,category);
-            /* We set the urgency, which can be changed with a commandline option */
-            notify_notification_set_urgency (my_notify,urgency);
-            /* We finally show the notification, */	
-            bool success = notify_notification_show(my_notify,&error);
-            if(debug){
-                if(success)
-                    printf("DEBUG: Notification was shown with success.\n");
-                else{
-                    printf("DEBUG: Notification failed, reason:\n\t");
-                    printf("[%i]%s\n", error->code, error->message);
+            /* Constructs the notification or update.
+             * If fails to update previous notificaion
+             * will try to create a new one.
+             * loop will only run twice at max; */
+            bool persist = TRUE;
+            bool success;
+            do{
+                if(!my_notify){
+                    my_notify = notify_notification_new("New updates for Arch Linux available!",output_string,icon);
                 }
-            }
+                else
+                    notify_notification_update(my_notify, "New updates for Arch Linux available!",output_string,icon);
+                /* Sets the timeout until the notification disappears. */
+                notify_notification_set_timeout(my_notify,timeout);
+                /* We set the category.*/
+                notify_notification_set_category(my_notify,category);
+                /* We set the urgency, which can be changed with a commandline option */
+                notify_notification_set_urgency (my_notify,urgency);
+                /* We finally show the notification, */	
+                success = notify_notification_show(my_notify,&error);
+                if(success && debug)
+                    printf("DEBUG(info): Notification was shown with success.\n");
+                else if(!success){
+                    if(debug){
+                        printf("DEBUG(error): Notification failed, reason:\n\t");
+                        printf("[%i]%s\n", error->code, error->message);
+                        g_error_free(error);
+                        error = NULL;
+                    }
+                    if(persist){
+                        printf("DEBUG(error): It could have been caused by an enviroment restart.\n");
+                        printf("DEBUG(error): Trying to work around it by reinitin libnotify.\n");
+                        my_notify = NULL;
+                        notify_uninit();
+                        notify_init(name);
+                        persist = FALSE;
+                    }
+                }
+            } while(!my_notify);
             if(error){
                 g_error_free(error);
                 error = NULL;
             }
             if(manual_timeout && success && will_loop){
                 if(debug)
-                    printf("DEBUG: Will close notification in %i minutes(this time will be reduced from the loop-time).\n", manual_timeout/60);
+                    printf("DEBUG(info): Will close notification in %i minutes(this time will be reduced from the loop-time).\n", manual_timeout/60);
+                fflush(stdout); // Make sure that all output was printed(needed if output is redirected to a log file)
                 sleep(manual_timeout);
                 offset = manual_timeout;
                 bool success = notify_notification_close(my_notify, &error);
                 if(debug){
                     if(success)
-                        printf("DEBUG: Notification closed.\n");
+                        printf("DEBUG(info): Notification closed.\n");
                     else{
-                        printf("DEBUG: Failed to close, reason:\n\t");
+                        printf("DEBUG(error): Failed to close, reason:\n\t");
                         printf("[%i]%s\n", error->code, error->message);
                     }
                 }
@@ -505,16 +525,16 @@ int main(int argc, char **argv)
             }
         } else {
             if(debug)
-                printf("DEBUG: No updates found.\n");
+                printf("DEBUG(info): No updates found.\n");
             if(my_notify){
                 if(debug)
-                    printf("DEBUG: Previous notification found. Closing it in case it was still opened.\n");
+                    printf("DEBUG(info): Previous notification found. Closing it in case it was still opened.\n");
                 bool success = notify_notification_close(my_notify, &error);
                 if(debug){
                     if(success)
-                        printf("DEBUG: Notification closed.\n");
+                        printf("DEBUG(info): Notification closed.\n");
                     else{
-                        printf("DEBUG: Failed to close, reason:\n\t");
+                        printf("DEBUG(error): Failed to close, reason:\n\t");
                         printf("[%i]%s\n", error->code, error->message);
                     }
                 }
@@ -530,9 +550,10 @@ int main(int argc, char **argv)
         if(will_loop){
             if(debug){
                 time(&now);
-                printf("DEBUG: Time now %s", ctime(&now));
-                printf("DEBUG: Next run will be in %i minutes\n", (loop_time-offset)/60);
+                printf("DEBUG(info): Time now %s", ctime(&now));
+                printf("DEBUG(info): Next run will be in %i minutes\n", (loop_time-offset)/60);
             }
+            fflush(stdout); // Make sure that all output was printed(needed if output is redirected to a log file)
             sleep(loop_time-offset);
             offset = 0;
         }
@@ -547,5 +568,5 @@ int main(int argc, char **argv)
     /* and deinitialize the libnotify afterwards. */    
     notify_uninit();
 
-    return(0);
+    return 0;
 }

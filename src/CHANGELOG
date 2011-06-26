@@ -1,3 +1,7 @@
+aarchup-1.6.1 (26/06/2011)
+    * better debug messages can grep now using "info" or "error"
+    * fixed buffer problem where it was not possible to redirect output to a file.
+    * fixed bug regarding notification not being showed if it was showed before an enviroment restart.
 aarchup-1.6 (22/06/2011)
     * wont notify about new updates when "pacman -Sy" fail, probably you don't have internet connection.
       You can change this behavior with --ignore-disconnect. Forcing the check for updates even after "pacman -Sy" fail.
