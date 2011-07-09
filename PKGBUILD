@@ -12,8 +12,7 @@ license="GPL"
 depends=('pacman' 'libnotify' 'gtk2')
 makedepends=('libnotify' 'autoconf' 'gzip')
 source=(https://github.com/downloads/aericson/aarchup/$pkgname-$pkgver.tar.gz)
-# Fix md5sum later
-md5sums=('b6c43cd368bad76850fe8f7c2d6f5d28')
+md5sums=('40fecab8f653ec1c512b20f0452d9078')
 optdepends=('cower: AUR support(--aur)')
 install=('aarchup.install')
 

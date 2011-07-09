@@ -25,8 +25,30 @@
 #include <time.h>
 #include <getopt.h>
 
+#define AUR_HEADER "AUR updates:\n"
 #define STREQ !strcmp
 #define VERSION_NUMBER "1.6.2"
+
+
+/* Parse cower -u output. 
+ * Format: ":: package_name version -> new_version" */
+void parse(char *line){
+    int i, j;
+    int llen = strlen(line);
+    /* Find first space */
+    for(i=0;!isspace(line[i]) && i < llen; ++i);
+    /* Copy package_name */
+    for(j=0, ++i;!isspace(line[i]) && i < llen;++j, ++i)
+        line[j] = line[i];
+    i = llen - 1;
+    line[j++] = ' ';
+    /* Find first char of new_version */
+    while(line[i]!=' ')
+        --i;
+    for(i++;line[i] != '\0'; ++i)
+        line[j++] = line[i];
+    line[j] = '\0';
+}
 
 /*
  * Splits string in spaces.
@@ -55,7 +77,6 @@ char ** split(char *c, int *size){
     return ls;
 }
 
-
 /*
  * Check if package in list
  */
@@ -69,7 +90,7 @@ int inlist(char **list, char *elem, int size){
     return FALSE;
 }
 
-gchar **get_ignore_pkgs(int *ign_pkg_size, int debug){
+char **get_ignore_pkgs(int *ign_pkg_size, int debug){
     GError *error = NULL;
     GKeyFile *pac_conf;
     gchar *value;
@@ -77,9 +98,7 @@ gchar **get_ignore_pkgs(int *ign_pkg_size, int debug){
     pac_conf = g_key_file_new();
     if(debug)
         printf("DEBUG(info): Reading /etc/pacman.conf for IgnorePkg list.\n");
-    if(!g_key_file_load_from_file(
-        pac_conf, "/etc/pacman.conf",
-        G_KEY_FILE_NONE, &error)){
+    if(!g_key_file_load_from_file(pac_conf, "/etc/pacman.conf", G_KEY_FILE_NONE, &error)){
         if(debug)
             printf("DEBUG(error): Impossible to open /etc/pacman.conf\n\tError(%i): %s\n",
                     error->code, error->message);
@@ -95,6 +114,69 @@ gchar **get_ignore_pkgs(int *ign_pkg_size, int debug){
     }
     g_key_file_free(pac_conf);
     return IgnorePkg;
+}
+
+void free_mat(char ***mat, int size){
+    int i;
+    for(i=0;i<size;++i)
+        free((*mat)[i]);
+    free(*mat);
+    *mat = NULL;
+}
+
+void read_update_pipe(FILE *pac_out, int *update_count, int max_number_out, int debug,
+                      char **IgnorePkg, int ign_pkg_size, char **output_string,
+                      int ignore_pkg_flag, int *got_updates, int aur){
+    char line[BUFSIZ];
+    int llen;
+    int first = TRUE;
+    while(fgets(line,BUFSIZ,pac_out)){
+        /* We leave the loop if we have more updates than we want to show in the notification. */
+        if (*update_count >= max_number_out)
+        {
+            if(debug)
+                printf("DEBUG(info): Maximum number of updates to list reached, stopping\n");
+            break;
+        }
+        if(ignore_pkg_flag && IgnorePkg){
+            int spl_size;
+            char **splitted;
+            splitted = split(line, &spl_size);
+            if(inlist(IgnorePkg, splitted[0], ign_pkg_size)){
+                if(debug)
+                    printf("DEBUG(info): Ignoring package %s.\n", splitted[0]);
+                free_mat(&splitted, spl_size);
+                continue;
+            }
+            free_mat(&splitted, spl_size);
+        }
+        if(aur && first){
+            llen = strlen(AUR_HEADER);
+            *output_string = (char *)realloc(*output_string,strlen(*output_string)+1+llen);
+            strncat(*output_string, AUR_HEADER, llen);
+            first = FALSE;
+        }
+        (*update_count)++;
+        if(aur)
+            parse(line);
+        if(debug){
+            if(!aur)
+                printf("DEBUG(info): Found update %s", line);
+            else
+                printf("DEBUG(info): Found update %s in aur", line);
+            if(line[strlen(line)-1] != '\n')
+                printf("\n");
+        }
+        /* If we are in this loop, we got updates waiting. */
+        *got_updates = TRUE;
+        /* We get the length of the current line. */
+        llen = strlen(line);
+        /* We allocate that much more memory+2 bytes for the "- "+1 byte as delimiter. */
+        *output_string = (char *)realloc(*output_string,strlen(*output_string)+1+llen+2);
+        /* We add the line to the output string. */
+        strncat(*output_string,"- ",2);
+        strncat(*output_string,line,llen);
+    }
 }
 
 /* Prints the help. */
@@ -145,25 +227,6 @@ int print_version()
     exit(0);
 }
 
-/* Parse cower -u output. 
- * Format: ":: package_name version -> new_version" */
-void parse(char *line){
-    int i, j;
-    int llen = strlen(line);
-    /* Find first space */
-    for(i=0;!isspace(line[i]) && i < llen; ++i);
-    /* Copy package_name */
-    for(j=0, ++i;!isspace(line[i]) && i < llen;++j, ++i)
-        line[j] = line[i];
-    i = llen - 1;
-    line[j++] = ' ';
-    /* Find first char of new_version */
-    while(line[i]!=' ')
-        --i;
-    for(i++;line[i] != '\0'; ++i)
-        line[j++] = line[i];
-    line[j] = '\0';
-}
 
 int main(int argc, char **argv)
 {
@@ -218,8 +281,11 @@ int main(int argc, char **argv)
             if(strcmp(argv[1], "--help") == 0)
                 print_help(argv[0]);
         }
+        /* Now we get every key from aarchup.conf */
         k = g_key_file_get_keys(p_key_file, "main", &c, NULL);
         int i = 0;
+        /* Will simulate argv each argument should have at most 2 spot(key/value)
+         * need also to allocate 1 spot for argv[0] */
         char **argvn = (char **)malloc(sizeof(char *)*(c*2+1));
         argv_dealloc = TRUE;
         argvn[0] = malloc(strlen(argv[0])+1);
@@ -227,11 +293,14 @@ int main(int argc, char **argv)
         argc = 1;
         argv = argvn;
         for(;k[i];++i){
+            /* size should be strlen + 2("--") + 1('\0')*/
             argv[argc] = malloc(strlen(k[i]) + 3);
             sprintf(argv[argc], "--%s", k[i]);
             argc++;
+            /* get value for the argument k[i] */
             value = g_key_file_get_string(p_key_file, "main", k[i], NULL);
             if(value && strlen(value)> 0){
+                /* Strip begging and ending " if starts with it */
                 if(value[0]=='"'){
                     int j;
                     for(j=0;j<strlen(value)-1;++j)
@@ -254,6 +323,7 @@ int main(int argc, char **argv)
     /* We parse the commandline options. */
     int c;
     while(1){
+        /* Long opts */
         static struct option long_options[] = {
             {"command", required_argument, 0, 'c'},
             {"icon", required_argument, 0, 'p'},
@@ -276,6 +346,7 @@ int main(int argc, char **argv)
                 &option_index);
         if(c == -1)
             break;
+        /* Short opts */
         switch(c)
         {
             case 0:
@@ -414,9 +485,7 @@ int main(int argc, char **argv)
 
     /* Those are needed for getting the list of updates. */
     FILE *pac_out;
-    int llen = 0;
-    char line[BUFSIZ];
-
+    
     /* For debug */
     time_t now;
 
@@ -462,58 +531,15 @@ int main(int argc, char **argv)
         sprintf(output_string,"There are updates for:\n");
         int i;
         i = 0;
-        if(ignore_pkg_flag){
+        /* update check */
+        if(ignore_pkg_flag)
             IgnorePkg = get_ignore_pkgs(&ign_pkg_size,debug);
-        }
-        while (fgets(line,BUFSIZ,pac_out)) 
-        {
-            /* We leave the loop if we have more updates than we want to show in the notification. */
-            if (i >= max_number_out)
-            {
-                if(debug)
-                    printf("DEBUG(info): Maximum number of updates to list reached, stopping\n");
-                break;
-            }
-            if(ignore_pkg_flag && IgnorePkg){
-                int spl_size;
-                gchar **splitted;
-                splitted = split(line, &spl_size);
-                if(inlist(IgnorePkg, splitted[0], ign_pkg_size)){
-                    if(debug)
-                        printf("DEBUG(info): Ignoring package %s.\n", splitted[0]);
-                    int i;
-                    for(i=0;i<spl_size;++i)
-                        free(splitted[i]);
-                    free(splitted);
-                    continue;
-                }
-                for(i=0;i<spl_size;++i)
-                    free(splitted[i]);
-                free(splitted);
-            }
-            i++;
-            if(debug){
-                printf("DEBUG(info): Found update %s", line);
-                if(line[strlen(line)-1] != '\n')
-                    printf("\n");
-            }
-            /* If we are in this loop, we got updates waiting. */
-            got_updates = TRUE;
-            /* We get the length of the current line. */
-            llen = strlen(line);
-            /* We allocate that much more memory+2 bytes for the "- "+1 byte as delimiter. */
-            output_string = (char *)realloc(output_string,strlen(output_string)+1+llen+2);
-            /* We add the line to the output string. */
-            strncat(output_string,"- ",2);
-            strncat(output_string,line,llen);
-        }
-        if(ignore_pkg_flag && IgnorePkg){
-            int i;
-            for(i=0;i<ign_pkg_size; i++)
-                free(IgnorePkg[i]);
-            free(IgnorePkg);
-            IgnorePkg = NULL;
-        }
+        
+        read_update_pipe(pac_out, &i, max_number_out, debug, IgnorePkg, ign_pkg_size, &output_string,
+                        ignore_pkg_flag, &got_updates, FALSE);
+        
+        if(ignore_pkg_flag && IgnorePkg)
+            free_mat(&IgnorePkg, ign_pkg_size);
         /* We close the popen stream if we don't need it anymore. */
         pclose(pac_out);
         /* aur check */
@@ -524,61 +550,16 @@ int main(int argc, char **argv)
             if(debug)
                 printf("DEBUG(info): running command: %s\n", cower);
             pac_out = popen(cower, "r");
-            bool first = TRUE;
-            char *aur_header = "AUR updates:\n";
-            if(ignore_pkg_flag){
+            if(ignore_pkg_flag)
                 IgnorePkg = get_ignore_pkgs(&ign_pkg_size,debug);
-            }
-            while(fgets(line,BUFSIZ,pac_out)){
-                if(i >= max_number_out){
-                    if(debug)
-                        printf("DEBUG(info): Maximum number of updates to list reached, stopping\n");
-                    break;
-                }
-                if(ignore_pkg_flag && IgnorePkg){
-                    int spl_size;
-                    gchar **splitted;
-                    splitted = split(line, &spl_size);
-                    if(inlist(IgnorePkg, splitted[0], ign_pkg_size)){
-                        if(debug)
-                            printf("DEBUG(info): Ignoring package %s.\n", splitted[0]);
-                        int i;
-                        for(i=0;i<spl_size;++i)
-                            free(splitted[i]);
-                        free(splitted);
-                        continue;
-                    }
-                    for(i=0;i<spl_size;++i)
-                        free(splitted[i]);
-                    free(splitted);
-                }
-                if(first){
-                    llen = strlen(aur_header);
-                    output_string = (char *)realloc(output_string,strlen(output_string)+1+llen);
-                    strncat(output_string, aur_header, llen);
-                    first = FALSE;
-                }
-                i++;
-                got_updates = TRUE;
-                parse(line);
-                if(debug){
-                    printf("DEBUG(info): Found update %s in aur", line);
-                    if(line[strlen(line)-1] != '\n')
-                        printf("\n");
-                }
-                llen = strlen(line);
-                output_string = (char *)realloc(output_string,strlen(output_string)+1+llen+2);
-                strncat(output_string,"- ", 2);
-                strncat(output_string,line,llen);
-            }
+            
+            read_update_pipe(pac_out, &i, max_number_out, debug, IgnorePkg, ign_pkg_size,
+                    &output_string, ignore_pkg_flag, &got_updates, TRUE);
+            
+            if(ignore_pkg_flag && IgnorePkg)
+                free_mat(&IgnorePkg, ign_pkg_size);
+            
             pclose(pac_out);
-        }
-        if(ignore_pkg_flag && IgnorePkg){
-            int i;
-            for(i=0;i<ign_pkg_size; i++)
-                free(IgnorePkg[i]);
-            free(IgnorePkg);
-            IgnorePkg = NULL;
         }
         /* If we got updates we are showing them in a notification */
         if (got_updates == TRUE)
@@ -599,6 +580,7 @@ int main(int argc, char **argv)
              * loop will only run twice at max; */
             bool persist = TRUE;
             bool success;
+            /* Loop to try again if error on showing notification. */
             do{
                 if(!my_notify){
                     my_notify = notify_notification_new("New updates for Arch Linux available!",output_string,icon);
@@ -691,13 +673,8 @@ int main(int argc, char **argv)
             offset = 0;
         }
     }while(will_loop);
-    if(argv_dealloc){
-        int i;
-        for(i=0; i< argc; ++i){
-            free(argv[i]);  
-        }
-        free(argv);
-    }
+    if(argv_dealloc)
+        free_mat(&argv, argc);
     /* and deinitialize the libnotify afterwards. */    
     notify_uninit();
 
