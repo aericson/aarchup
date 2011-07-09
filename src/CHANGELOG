@@ -1,3 +1,7 @@
+aarchup-1.6.2 (08/07/2011)
+    * will read /etc/pacman.conf and won't notify for IgnorePkg updates
+      You can add aur packages there too probably won't have any trouble.
+      Please use IgnorePkg only once and separate packages with space
 aarchup-1.6.1 (26/06/2011)
     * better debug messages can grep now using "info" or "error"
     * fixed buffer problem where it was not possible to redirect output to a file.

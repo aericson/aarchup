@@ -25,7 +25,77 @@
 #include <time.h>
 #include <getopt.h>
 
-#define VERSION_NUMBER "1.6.1"
+#define STREQ !strcmp
+#define VERSION_NUMBER "1.6.2"
+
+/*
+ * Splits string in spaces.
+ * Does not treat NULL or empty string
+ */
+char ** split(char *c, int *size){
+    char **ls = (char **) malloc(sizeof(char*));
+    int i, j=0, allocd=1;
+    *size = 0;
+    for(i=0;i<strlen(c)+1;++i){
+        if(isspace(c[i])|| c[i] == '\0'){
+            if((*size) >= allocd){
+                ls = (char **)realloc(ls, sizeof(char*)*allocd*2);
+                allocd *= 2;
+            }       
+            if(i!=j){
+                ls[(*size)] = (char *)malloc(i-j+1);
+                strncpy(ls[(*size)], c+j, i-j);
+                ls[(*size)][i-j] = '\0'; 
+                (*size)++;
+                j=i;
+            }       
+            j++;
+        }       
+    }       
+    return ls;
+}
+
+
+/*
+ * Check if package in list
+ */
+int inlist(char **list, char *elem, int size){
+    int i;
+    for(i=0;i<size;++i){
+        if(STREQ(list[i],elem)){
+            return TRUE;
+        }       
+    }       
+    return FALSE;
+}
+
+gchar **get_ignore_pkgs(int *ign_pkg_size, int debug){
+    GError *error = NULL;
+    GKeyFile *pac_conf;
+    gchar *value;
+    gchar **IgnorePkg = NULL;
+    pac_conf = g_key_file_new();
+    if(debug)
+        printf("DEBUG(info): Reading /etc/pacman.conf for IgnorePkg list.\n");
+    if(!g_key_file_load_from_file(
+        pac_conf, "/etc/pacman.conf",
+        G_KEY_FILE_NONE, &error)){
+        if(debug)
+            printf("DEBUG(error): Impossible to open /etc/pacman.conf\n\tError(%i): %s\n",
+                    error->code, error->message);
+        g_error_free(error);
+        error = NULL;
+        return NULL;
+    }else{
+        value = g_key_file_get_string(pac_conf, "options", "IgnorePkg", NULL);
+        if(value){
+            IgnorePkg = split(value, ign_pkg_size);
+            g_free(value);
+        }
+    }
+    g_key_file_free(pac_conf);
+    return IgnorePkg;
+}
 
 /* Prints the help. */
 int print_help(char *name)
@@ -55,8 +125,10 @@ int print_help(char *name)
     printf("          --ftimeout|-f [value]       Program will manually enforce timeout for closing notification.\n");
     printf("                                      Do NOT use with --timeout, if --timeout works or without --loop-time [value].\n");
     printf("                                      The value for this option should be in minutes.\n");
-    printf("          --ignore-disconnect          If this flag is set aarchup will notify you about new updates even if pacman -Sy failed.\n");
+    printf("          --ignore-disconnect         If this flag is set aarchup will notify you about new updates even if pacman -Sy failed.\n");
     printf("                                      no point in using this without --loop-time.\n");
+    printf("          --pkg-no-ignore             If this flag is set will not use the IgnorePkg variable from pacman.conf. Without the flag will ignore those\n");
+    printf("                                      packages\n");
     printf("\nMore informations can be found in the manpage.\n");
     exit(0);
 }
@@ -110,6 +182,7 @@ int main(int argc, char **argv)
     static int version_flag = 0;
     static int aur = 0;
     static int ignore_disc_flag = 0;
+    static int ignore_pkg_flag = 1;
     bool will_loop = FALSE, debug = FALSE, argv_dealloc = FALSE;
     /* Sets the urgency-level to normal. */
     urgency = NOTIFY_URGENCY_NORMAL;
@@ -195,6 +268,7 @@ int main(int argc, char **argv)
             {"ftimeout", required_argument, 0, 'f'},
             {"debug", no_argument, 0, 'd'},
             {"ignore-disconnect", no_argument, &ignore_disc_flag, 1},
+            {"pkg-no-ignore", no_argument, &ignore_pkg_flag, 0},
             {0, 0, 0, 0},
         };
         int option_index = 0;
@@ -325,6 +399,8 @@ int main(int argc, char **argv)
         printf("DEBUG(info): aur is on\n");
     if(debug && ignore_disc_flag)
         printf("DEBUG(info): ignore-diconnect is on. Will ignore 'pacman -Sy' failure.\n");
+    if(debug && !ignore_pkg_flag)
+        printf("DEBUG(info): ignoring pacman.conf IgnorePkg variable.\n");
 
     /* Those are needed by libnotify. */
     char *name = "New Updates";
@@ -346,13 +422,17 @@ int main(int argc, char **argv)
 
     /* For manual timeout */
     int offset = 0;
+    
+    /* For IgnorePkg */
+    gchar **IgnorePkg = NULL;;
+    int ign_pkg_size;
 
     do{
         /* If isn't set to loop than probably pacman's database was alreald synced  */
         if(will_loop){
             if(debug)
                 printf("DEBUG(info): loop-time is on, running pacman -Sy\n");
-            int success = system("sudo pacman -Sy 2> /dev/null");
+            int success = system("sudo pacman -Sy &> /dev/null");
             if(success != 0){
                 if(debug){
                     printf("DEBUG(error): failed to do pacman -Sy\n");
@@ -382,6 +462,9 @@ int main(int argc, char **argv)
         sprintf(output_string,"There are updates for:\n");
         int i;
         i = 0;
+        if(ignore_pkg_flag){
+            IgnorePkg = get_ignore_pkgs(&ign_pkg_size,debug);
+        }
         while (fgets(line,BUFSIZ,pac_out)) 
         {
             /* We leave the loop if we have more updates than we want to show in the notification. */
@@ -390,6 +473,23 @@ int main(int argc, char **argv)
                 if(debug)
                     printf("DEBUG(info): Maximum number of updates to list reached, stopping\n");
                 break;
+            }
+            if(ignore_pkg_flag && IgnorePkg){
+                int spl_size;
+                gchar **splitted;
+                splitted = split(line, &spl_size);
+                if(inlist(IgnorePkg, splitted[0], ign_pkg_size)){
+                    if(debug)
+                        printf("DEBUG(info): Ignoring package %s.\n", splitted[0]);
+                    int i;
+                    for(i=0;i<spl_size;++i)
+                        free(splitted[i]);
+                    free(splitted);
+                    continue;
+                }
+                for(i=0;i<spl_size;++i)
+                    free(splitted[i]);
+                free(splitted);
             }
             i++;
             if(debug){
@@ -407,7 +507,13 @@ int main(int argc, char **argv)
             strncat(output_string,"- ",2);
             strncat(output_string,line,llen);
         }
-
+        if(ignore_pkg_flag && IgnorePkg){
+            int i;
+            for(i=0;i<ign_pkg_size; i++)
+                free(IgnorePkg[i]);
+            free(IgnorePkg);
+            IgnorePkg = NULL;
+        }
         /* We close the popen stream if we don't need it anymore. */
         pclose(pac_out);
         /* aur check */
@@ -420,11 +526,31 @@ int main(int argc, char **argv)
             pac_out = popen(cower, "r");
             bool first = TRUE;
             char *aur_header = "AUR updates:\n";
+            if(ignore_pkg_flag){
+                IgnorePkg = get_ignore_pkgs(&ign_pkg_size,debug);
+            }
             while(fgets(line,BUFSIZ,pac_out)){
                 if(i >= max_number_out){
                     if(debug)
                         printf("DEBUG(info): Maximum number of updates to list reached, stopping\n");
                     break;
+                }
+                if(ignore_pkg_flag && IgnorePkg){
+                    int spl_size;
+                    gchar **splitted;
+                    splitted = split(line, &spl_size);
+                    if(inlist(IgnorePkg, splitted[0], ign_pkg_size)){
+                        if(debug)
+                            printf("DEBUG(info): Ignoring package %s.\n", splitted[0]);
+                        int i;
+                        for(i=0;i<spl_size;++i)
+                            free(splitted[i]);
+                        free(splitted);
+                        continue;
+                    }
+                    for(i=0;i<spl_size;++i)
+                        free(splitted[i]);
+                    free(splitted);
                 }
                 if(first){
                     llen = strlen(aur_header);
@@ -446,6 +572,13 @@ int main(int argc, char **argv)
                 strncat(output_string,line,llen);
             }
             pclose(pac_out);
+        }
+        if(ignore_pkg_flag && IgnorePkg){
+            int i;
+            for(i=0;i<ign_pkg_size; i++)
+                free(IgnorePkg[i]);
+            free(IgnorePkg);
+            IgnorePkg = NULL;
         }
         /* If we got updates we are showing them in a notification */
         if (got_updates == TRUE)

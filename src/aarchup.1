@@ -32,6 +32,10 @@ aarchup uses GTk+ and libnotify to show a desktop notification if updates are av
                                       The value for this option should be in minutes.
           --ignore-disconnect         If this flag is set aarchup will notify you about new updates even if pacman -Sy failed.
                                       no point in using this without --loop-time.
+          --pkg-no-ignore             If this flag is set will not use the IgnorePkg variable from pacman.conf. Without the flag will ignore those
+                                      packages. Feel free to add packages names to pacman.conf even if they are from AUR, will cause no harm and will
+                                      also ignore it and not show updates.
+
 
 
 .SH "CONFIGURATION"
