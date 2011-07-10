@@ -27,7 +27,7 @@
 
 #define AUR_HEADER "AUR updates:\n"
 #define STREQ !strcmp
-#define VERSION_NUMBER "1.6.3"
+#define VERSION_NUMBER "1.6.4"
 
 
 /* Parse cower -u output. 
@@ -58,6 +58,7 @@ char ** split(char *c, int *size){
     char **ls = (char **) malloc(sizeof(char*));
     int i, j=0, allocd=1;
     *size = 0;
+    
     for(i=0;i<strlen(c)+1;++i){
         if(isspace(c[i])|| c[i] == '\0'){
             if((*size) >= allocd){
@@ -115,8 +116,9 @@ char* parse_conf(FILE *p_file){
                 c++;
             c++;
             char *d = (char*)malloc(strlen(buf));
-            for(i=0;c[i]!='\n';++i)
+            for(i=0;c[i]!='\n'&&c[i]!='#';++i)
                 d[i] = c[i];
+            d[i] = '\0';
             return d;
         }
     }
