@@ -27,7 +27,7 @@
 
 #define AUR_HEADER "AUR updates:\n"
 #define STREQ !strcmp
-#define VERSION_NUMBER "1.6.2"
+#define VERSION_NUMBER "1.6.3"
 
 
 /* Parse cower -u output. 
@@ -90,30 +90,54 @@ int inlist(char **list, char *elem, int size){
     return FALSE;
 }
 
-char **get_ignore_pkgs(int *ign_pkg_size, int debug){
-    GError *error = NULL;
-    GKeyFile *pac_conf;
-    gchar *value;
-    gchar **IgnorePkg = NULL;
-    pac_conf = g_key_file_new();
-    if(debug)
-        printf("DEBUG(info): Reading /etc/pacman.conf for IgnorePkg list.\n");
-    if(!g_key_file_load_from_file(pac_conf, "/etc/pacman.conf", G_KEY_FILE_NONE, &error)){
-        if(debug)
-            printf("DEBUG(error): Impossible to open /etc/pacman.conf\n\tError(%i): %s\n",
-                    error->code, error->message);
-        g_error_free(error);
-        error = NULL;
-        return NULL;
-    }else{
-        value = g_key_file_get_string(pac_conf, "options", "IgnorePkg", NULL);
-        if(value){
-            IgnorePkg = split(value, ign_pkg_size);
-            g_free(value);
+/*
+ * Check if s1 starts with s2
+ */
+int startswith(char *s1, char *s2){
+    int llen = strlen(s2);
+    int i;
+    for(i=0;i<llen;++i)
+        if(s1[i]!=s2[i])
+            return FALSE;
+    return TRUE;
+}
+
+/*
+ * Parse p_file and get the value of IgnorePkg
+ */
+char* parse_conf(FILE *p_file){
+    int i;
+    char buf[BUFSIZ];
+    while(fgets(buf, BUFSIZ, p_file)){
+        if(startswith(buf, "IgnorePkg")){
+            char *c = buf;
+            while(*c != '=')
+                c++;
+            c++;
+            char *d = (char*)malloc(strlen(buf));
+            for(i=0;c[i]!='\n';++i)
+                d[i] = c[i];
+            return d;
         }
     }
-    g_key_file_free(pac_conf);
-    return IgnorePkg;
+    return NULL;
+}
+
+char **get_ignore_pkgs(int *ign_pkg_size, int debug){
+    FILE *pacman;
+    pacman = fopen("/etc/pacman.conf", "rt");
+    if(!pacman){
+        printf("DEBUG(error): Impossible to open /etc/pacman.conf\n");
+        return NULL;
+    }
+    char *value = parse_conf(pacman);
+    fclose(pacman);
+    char **IgnorePkg = NULL;
+    if(value){
+        IgnorePkg = split(value, ign_pkg_size);
+        free(value);
+    }
+    return IgnorePkg;    
 }
 
 void free_mat(char ***mat, int size){

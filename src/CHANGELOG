@@ -1,3 +1,5 @@
+aarchup-1.6.3 (09/07/2011)
+    * Bug fixes (Fail to read /etc/pacman.conf when options like ShowSize is uncomment)
 aarchup-1.6.2 (08/07/2011)
     * will read /etc/pacman.conf and won't notify for IgnorePkg updates
       You can add aur packages there too probably won't have any trouble.
