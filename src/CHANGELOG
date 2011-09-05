@@ -1,3 +1,7 @@
+aarchup-1.6.5 (05/09/2011)
+    * aarchupstartup.sh editted to kill running aarchup and restarting it(might fix some problems)
+    * since pacman -Qu shows current version, added a '+' sign to the version name so that it won't be miss interpretated.
+    * some small changes nothing really important
 aarchup-1.6.4 (10/07/2011)
     * Bug fix(check commit)
 aarchup-1.6.3 (09/07/2011)

@@ -27,7 +27,7 @@
 
 #define AUR_HEADER "AUR updates:\n"
 #define STREQ !strcmp
-#define VERSION_NUMBER "1.6.4"
+#define VERSION_NUMBER "1.6.5"
 
 
 /* Parse cower -u output. 
@@ -185,11 +185,17 @@ void read_update_pipe(FILE *pac_out, int *update_count, int max_number_out, int 
         (*update_count)++;
         if(aur)
             parse(line);
+        else{
+            if(strlen(line)+2 <= BUFSIZ){
+                line[strlen(line)-1] = '\0';
+                strcat(line, "+\n");
+            }
+        }
         if(debug){
             if(!aur)
                 printf("DEBUG(info): Found update %s", line);
             else
-                printf("DEBUG(info): Found update %s in aur", line);
+                printf("DEBUG(info): Found update in aur %s", line);
             if(line[strlen(line)-1] != '\n')
                 printf("\n");
         }
