@@ -24,6 +24,7 @@
 #include <unistd.h>
 #include <time.h>
 #include <getopt.h>
+#include <stdbool.h>
 
 #define AUR_HEADER "AUR updates:\n"
 #define STREQ !strcmp
@@ -152,10 +153,11 @@ void free_mat(char ***mat, int size){
 
 void read_update_pipe(FILE *pac_out, int *update_count, int max_number_out, int debug,
                       char **IgnorePkg, int ign_pkg_size, char **output_string,
-                      int ignore_pkg_flag, int *got_updates, int aur){
+                      int ignore_pkg_flag, bool *got_updates, int aur){
     char line[BUFSIZ];
     int llen;
     int first = TRUE;
+    int ignore_index = aur ? 1 : 0;
     while(fgets(line,BUFSIZ,pac_out)){
         /* We leave the loop if we have more updates than we want to show in the notification. */
         if (*update_count >= max_number_out)
@@ -168,9 +170,9 @@ void read_update_pipe(FILE *pac_out, int *update_count, int max_number_out, int 
             int spl_size;
             char **splitted;
             splitted = split(line, &spl_size);
-            if(inlist(IgnorePkg, splitted[0], ign_pkg_size)){
+            if(ignore_index < ign_pkg_size && inlist(IgnorePkg, splitted[ignore_index], ign_pkg_size)){
                 if(debug)
-                    printf("DEBUG(info): Ignoring package %s.\n", splitted[0]);
+                    printf("DEBUG(info): Ignoring package %s.\n", splitted[ignore_index]);
                 free_mat(&splitted, spl_size);
                 continue;
             }
@@ -262,7 +264,6 @@ int print_version()
 
 int main(int argc, char **argv)
 {
-    typedef int bool;
     NotifyUrgency urgency;
 
 
