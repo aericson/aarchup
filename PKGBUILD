@@ -14,7 +14,7 @@ makedepends=('libnotify' 'autoconf' 'gzip')
 source=(https://github.com/downloads/aericson/aarchup/$pkgname-$pkgver.tar.gz)
 md5sums=('49ae43307fec7d11f458fd3b6708a621')
 optdepends=('cower: AUR support(--aur)')
-install=('aarchup.install')
+install='aarchup.install'
 
 build() {
 	cd $pkgname-$pkgver/src
