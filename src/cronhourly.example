@@ -18,11 +18,24 @@
 
 # put this file into /etc/cron.hourly and replace rorschach with your username
 
-arch_user=rorschach
+ARCH_USER=rorschach
 
 if [ -z "$(pgrep pacman)" ];then
         /usr/bin/pacman -Sy > /dev/null
 fi
-su - $arch_user -c "XAUTHORITY=/home/$arch_user/.Xauthority DISPLAY=:0.0 /usr/bin/aarchup --uid $(id -u $arch_user) --icon /usr/share/aarchup/archlogo.svg"
-# IF YOU USE GDM PLEASE UNCOMMENT THE FOLLOWIN AND COMMENT THE ABOVE
-#su - $arch_user -c "XAUTHORITY=$(/usr/bin/find /var/run/gdm -path "*${arch_user}*/database") DISPLAY=:0.0 /usr/bin/aarchup --uid $(id -u $arch_user) --icon /usr/share/aarchup/archlogo.svg"
+
+USER_UID=`id -u $ARCH_USER`
+SYSTEMCTL_GDM=`systemctl show gdm | grep ActiveState | cut -d"=" -f2`
+
+if [ "$SYSTEMCTL_GDM" = "active" ] ; then
+	# Don't know if there is still gdm v2 in the wild...
+	GDM_VERSION=`pacman -Qi gdm | grep Version | cut -d":" -f2 | sed "s/ //g" | cut -d'.' -f1`
+    if [ $GDM_VERSION -eq 3 ] ; then
+		DISPLAY=:0 /usr/bin/aarchup --uid $USER_UID --icon /usr/share/aarchup/archlogo.svg
+    else
+		su - $ARCH_USER -c "XAUTHORITY=$(/usr/bin/find /var/run/gdm -path "*${ARCH_USER}*/database") DISPLAY=:0.0 /usr/bin/aarchup --uid $USER_UID --icon /usr/share/aarchup/archlogo.svg"
+    fi
+else
+	su - $ARCH_USER -c "XAUTHORITY=/home/$ARCH_USER/.Xauthority DISPLAY=:0.0 /usr/bin/aarchup --uid $USER_UID --icon /usr/share/aarchup/archlogo.svg"
+fi
+
