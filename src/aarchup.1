@@ -95,13 +95,13 @@ Archup will run on next boot or you can manually start it running /usr/share/aar
 
 \fIHourly\fR
 
-The most simple setup is for a single user system where you want to check once an hour for updates. In this case just copy the /usr/share/doc/aarchup/cronhourly.example to /etc/cron.hourly/aarchup.sh
+The most simple setup is for a single user system where you want to check once an hour for updates. In this case just copy the /usr/share/doc/aarchup/cronhourly.example to /etc/cron.hourly/aarchup
 .PP
-          $ sudo cp /usr/share/doc/aarchup/cronhourly.example /etc/cron.hourly/aarchup.sh
+          $ sudo cp /usr/share/doc/aarchup/cronhourly.example /etc/cron.hourly/aarchup
 .PP
 and make it executable with
 .PP
-          $ sudo chmod 755 /etc/cron.hourly/aarchup.sh
+          $ sudo chmod 755 /etc/cron.hourly/aarchup
 .PP 
 Finally open this file with a texteditor of your choice and change the username of the arch_user value with your username.
 If you use GDM make sure to check the comments at the end of the file.

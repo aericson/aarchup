@@ -23,6 +23,17 @@ arch_user=rorschach
 if [ -z "$(pgrep pacman)" ];then
         /usr/bin/pacman -Sy > /dev/null
 fi
+
+# RUNNING AARCHUP
+
 su - $arch_user -c "XAUTHORITY=/home/$arch_user/.Xauthority DISPLAY=:0.0 /usr/bin/aarchup --uid $(id -u $arch_user) --icon /usr/share/aarchup/archlogo.svg"
+
 # IF YOU USE GDM PLEASE UNCOMMENT THE FOLLOWIN AND COMMENT THE ABOVE
-#su - $arch_user -c "XAUTHORITY=$(/usr/bin/find /var/run/gdm -path "*${arch_user}*/database") DISPLAY=:0.0 /usr/bin/aarchup --uid $(id -u $arch_user) --icon /usr/share/aarchup/archlogo.svg"
+
+#GSPID=$(pidof gnome-shell)
+#if [ -e "/proc/$GSPID/environ" ]; then
+# export $(</proc/$GSPID/environ tr \\0 \\n | grep -E '^DBUS_SESSION_BUS_ADDRESS=')
+# export XAUTHORITY=$(/usr/bin/find /var/run/gdm -path "*${arch_user}*/database")
+# export DISPLAY=:0
+# /usr/bin/aarchup  --uid $(id -u $arch_user) --icon /usr/share/aarchup/archlogo.svg
+#fi

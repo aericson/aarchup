@@ -16,3 +16,9 @@ post_install() {
     check https://bbs.archlinux.org/viewtopic.php?id=119129
 EOF
 }
+
+post_remove() {
+	cat <<EOF
+    Don't forget to remove it from your crontab.
+EOF
+}
