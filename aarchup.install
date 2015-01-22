@@ -1,11 +1,7 @@
 post_upgrade() {
 	cat << EOF
-    aarchupstartup.example was changed to use png icon
-    if you use awesome-wm or some other wm that
-    does not support svg, copy the new
-    /usr/share/doc/aarchup/aarchupstartup.example to
-    /usr/share/aarchup/aarchupstartup.sh
-    or manually edit it to use .png intead of .svg
+    Crontab is no longer supported. The prefered method is still with --loop-time.
+    Alternatively you can use systemd. Please see man aarchup.
 EOF
 }
 

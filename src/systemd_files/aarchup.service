@@ -1,0 +1,6 @@
+[Unit]
+Description=Run aarchup
+
+[Service]
+Type=simple
+ExecStart=/usr/share/aarchup/noxaarchup.sh

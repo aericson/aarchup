@@ -1,0 +1,9 @@
+[Unit]
+Description=Run foo every minute
+
+[Timer]
+OnBootSec=15m
+OnUnitActiveSec=12h
+
+[Install]
+WantedBy=timers.target
