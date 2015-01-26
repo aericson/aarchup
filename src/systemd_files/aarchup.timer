@@ -3,7 +3,7 @@ Description=Run foo every minute
 
 [Timer]
 OnBootSec=15m
-OnUnitActiveSec=12h
+OnUnitActiveSec=1h
 
 [Install]
 WantedBy=timers.target

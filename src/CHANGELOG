@@ -1,3 +1,7 @@
+aarchup-1.7.0 (25/01/2015)
+    * drop cron support
+    * add systemd timer
+    * update documentation
 aarchup-1.6.8 (09/10/2013)
     * fix cronhourly.example
     * update documentation
