@@ -35,17 +35,21 @@ install:
 	install -Dm744 COPYING $(DESTDIR)/usr/share/doc/aarchup/COPYING
 	install -Dm744 VERSION $(DESTDIR)/usr/share/doc/aarchup/VERSION
 	install -Dm744 CHANGELOG $(DESTDIR)/usr/share/doc/aarchup/CHANGELOG
-	install -Dm744 cronhourly.example $(DESTDIR)/usr/share/doc/aarchup/cronhourly.example
 	install -Dm644 aarchup.1.gz $(DESTDIR)/usr/share/man/man1/aarchup.1.gz
 	install -Dm755 aarchupstartup.sh $(DESTDIR)/usr/share/doc/aarchup/aarchupstartup.example
 	install -Dm744 aarchup.desktop $(DESTDIR)/usr/share/doc/aarchup/aarchup.desktop
 	install -Dm774 archlogo.svg $(DESTDIR)/usr/share/aarchup/archlogo.svg
+	install -Dm755 systemd_files/noxaarchup.sh $(DESTDIR)/usr/share/aarchup/noxaarchup.sh
+	install -Dm644 systemd_files/aarchup.timer $(DESTDIR)/etc/systemd/system/aarchup.timer
+	install -Dm644 systemd_files/aarchup.service $(DESTDIR)/etc/systemd/system/aarchup.service
 
 uninstall:
 	rm -f $(DESTDIR)/usr/bin/aarchup
 	rm -rf $(DESTDIR)/usr/share/doc/aarchup
 	rm -f $(DESTDIR)/usr/share/man/man1/aarchup.1.gz
 	rm -rf $(DESTDIR)/usr/share/aarchup
+	rm -f $(DESTDIR)/etc/systemd/system/aarchup.timer
+	rm -f $(DESTDIR)/etc/systemd/system/aarchup.service
 
 distclean:
 	rm -rf aarchup autoscan.log autom4te.cache Makefile configure.scan configure config.*

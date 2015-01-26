@@ -17,7 +17,7 @@
 aarchup (https://github.com/aericson/aarchup) is a small C application which informs the user when system-updates for Archlinux are available. It's licenced under the GPLv3. In contrast to other update notifiers aarchup is intended to be lightweight and just do what it should: notify about possible updates.
 It is forked from Rorschach's archup (http://www.nongnu.org/archup/).
 
-aarchup uses GTk+ and libnotify to show a desktop notification if updates are available. It follows the unix-philosophy of "just doing one thing, but doing  it  well".  It just notifies about new updates but the packagedatabase has to be updated by the user (better said a cronjob). It  can be used to regulary check for new updates and get a desktop notification if there are some.
+aarchup uses GTk+ and libnotify to show a desktop notification if updates are available. It follows the unix-philosophy of "just doing one thing, but doing  it  well". It  can be used to regulary check for new updates and get a desktop notification if there are some.
 
 Read manpages for configuration.
 
