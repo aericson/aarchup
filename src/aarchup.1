@@ -4,7 +4,7 @@ aarchup \- lightweight pacman update notifier, a fork from archup by Rorschach
 .SH "SYNOPSIS"
 \fIaarchup\fR [options]
 .SH "DESCRIPTION"
-aarchup is a small C application which informs the user when system\-updates for Archlinux are available. It's licenced under the GPLv3. In contrast to other update notifiers aarchup is intended to be lightweight and just do what it should, notify about possible updates.
+aarchup is a small C application which informs the user when system\-updates for Archlinux are available. It's licensed under the GPLv3. In contrast to other update notifiers aarchup is intended to be lightweight and just do what it should, notify about possible updates.
 
 aarchup uses GTk+ and libnotify to show a desktop notification if updates are available. It follows the unix-philosophy of "just doing one thing, but doing it well". It notifies about new updates. With a systemd timer aarchup can be used to regularly check for new updates and get a desktop notification if there are some. It can also runs on it's own and check for updates regularly.
 .SH "OPTIONS"
@@ -14,14 +14,14 @@ aarchup uses GTk+ and libnotify to show a desktop notification if updates are av
                                       By default no icon is shown.
           --maxentries|-m [value]     Set the maximum number of packages which shall be displayed in the notification.
                                       The default value is 30.
-          --timeout|-t [value]        Set the timeout after which the notification disappers in seconds.
+          --timeout|-t [value]        Set the timeout after which the notification disappears in seconds.
                                       The default value is 3600 seconds, which is 1 hour.
           --uid|-i [value]            Set the uid of the process.
                                       The default is to keep the uid of the user who started aarchup.
                                       !!You should change this if root is executing aarchup!!
           --urgency|-u [value]        Set the libnotify urgency-level. Possible values are: low, normal and critical.
                                       The default value is normal. With changing this value you can change the color of the notification.
-          --loop-time|-l [value]      When this is used the program will control the check for updates in the inverval of minutes specified,
+          --loop-time|-l [value]      When this is used the program will control the check for updates in the interval of minutes specified,
                                       if none is specified, the default(60) will be used. See: Loop-time above.
           --help                      Prints this help.
           --version                   Shows the version.
@@ -39,7 +39,7 @@ aarchup uses GTk+ and libnotify to show a desktop notification if updates are av
 
 
 .SH "CONFIGURATION"
-aarchup can simply be invoked by executing it from the commandline. But you surely want to automate this task and let aarchup continouisly be run with a systemd timer.
+aarchup can simply be invoked by executing it from the commandline. But you surely want to automate this task and let aarchup continuously be run with a systemd timer.
 There are two ways of automating aarchup runs. One setup is to use the --loop-time option and the other is using a systemd timer.
 
 \fIConfiguration File\fR
@@ -66,7 +66,7 @@ Please notice that if you have the file /etc/aarchup.conf all arguments passed t
 
 \fILoop-time\fR
 
-When using the --loop-time option the program will run endless. This has an advantage over the systemd method. For example on gnome3 when running aarchup with systemd, if you get more than one notification of updates and you don't close them, they will keep getting stacked and you gonna end up with a few notifications(of the same thing) at the notification bar. Which can get really annoying to close manually.
+When using the --loop-time option the program will run endless. This has an advantage over the systemd method. For example on gnome3 when running aarchup with systemd, if you get more than one notification of updates and you don't close them, they will keep getting stacked and you are going to end up with a few notifications(of the same thing) at the notification bar. Which can get really annoying to close manually.
 When the program is running on its own it can keep track of it's notifications and update them as needed instead of creating new ones.
 In case you would like to use this method on startup copy /usr/share/doc/aarchup/aarchup.desktop to /home/user/.config/autostart
 
@@ -103,7 +103,7 @@ and make it enabled at boot:
 .PP
           $ sudo systemctl enable aarchup.timer
 .PP 
-Now every hour your package database will get updated and after that aarchup will be executed. If there are updates aarchup shows a desktop notifiaction, if there are no updates nothing will happen. The desktop notification will automatically disappear after 60min or if you simply click on it.
+Now every hour your package database will get updated and after that aarchup will be executed. If there are updates aarchup shows a desktop notification, if there are no updates nothing will happen. The desktop notification will automatically disappear after 60min or if you simply click on it.
 
 \fIother Intervals\fR
 
