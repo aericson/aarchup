@@ -1,3 +1,5 @@
+aarchup-1.7.1 (02/01/2015)
+    * updated noxaarchup.sh to work without gconf-helper
 aarchup-1.7.0 (25/01/2015)
     * drop cron support
     * add systemd timer

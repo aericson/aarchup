@@ -1,5 +1,5 @@
 [Unit]
-Description=Run foo every minute
+Description=Run aarchup in a given frequency 
 
 [Timer]
 OnBootSec=15m
