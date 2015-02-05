@@ -1,4 +1,6 @@
-aarchup-1.7.1 (02/01/2015)
+aarchup-1.7.2 (05/02/2015)
+    * updated noxaarchup.sh with another method to get user
+aarchup-1.7.1 (01/02/2015)
     * updated noxaarchup.sh to work without gconf-helper
 aarchup-1.7.0 (25/01/2015)
     * drop cron support
