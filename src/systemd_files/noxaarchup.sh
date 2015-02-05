@@ -15,8 +15,14 @@ wrapper(){
         called=true
     done
     if [ $called = false ]; then
+        for p in $(pgrep dconf-service); do
+            call_aarchup /proc/$p/environ
+            called=true
+        done
+    fi
+    if [ $called = false ]; then
         call_aarchup /proc/self/environ
-    fi  
+    fi
 }
 
 pacman -Sy || exit 1
