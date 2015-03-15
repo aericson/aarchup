@@ -39,6 +39,7 @@ install:
 	install -Dm755 aarchupstartup.sh $(DESTDIR)/usr/share/doc/aarchup/aarchupstartup.example
 	install -Dm744 aarchup.desktop $(DESTDIR)/usr/share/doc/aarchup/aarchup.desktop
 	install -Dm774 archlogo.svg $(DESTDIR)/usr/share/aarchup/archlogo.svg
+	install -Dm774 archlogo.png $(DESTDIR)/usr/share/aarchup/archlogo.png
 	install -Dm755 systemd_files/noxaarchup.sh $(DESTDIR)/usr/share/aarchup/noxaarchup.sh
 	install -Dm644 systemd_files/aarchup.timer $(DESTDIR)/etc/systemd/system/aarchup.timer
 	install -Dm644 systemd_files/aarchup.service $(DESTDIR)/etc/systemd/system/aarchup.service
