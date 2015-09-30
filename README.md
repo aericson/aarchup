@@ -11,7 +11,7 @@ Read manpages for configuration.
 
 * Rorschach, for the great tool and the credits are all his.
 * Lucke, features requests and bugs reports.
-* [Vinta Software Studio](http://www.vinta.com.br) for encourage it's developers to get involved with open source software.
+* [Vinta Software Studio](http://www.vinta.com.br) for encouraging it's developers to get involved with open source software.
 
 ## Bugs
 
