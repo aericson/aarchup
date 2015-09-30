@@ -25,5 +25,4 @@ wrapper(){
     fi
 }
 
-pacman -Sy || exit 1
 wrapper || exit 1

@@ -9,7 +9,7 @@ aarchup is a small C application which informs the user when system\-updates for
 aarchup uses GTk+ and libnotify to show a desktop notification if updates are available. It follows the unix-philosophy of "just doing one thing, but doing it well". It notifies about new updates. With a systemd timer aarchup can be used to regularly check for new updates and get a desktop notification if there are some. It can also runs on it's own and check for updates regularly.
 .SH "OPTIONS"
           --command|-c [value]        Set the command which gives out the list of updates.
-                                      The default is /usr/bin/pacman -Qu
+                                      The default is /usr/bin/checkupdates
           --icon|-p [value]           Shows the icon, whose path has been given as value, in the notification.
                                       By default no icon is shown.
           --maxentries|-m [value]     Set the maximum number of packages which shall be displayed in the notification.
@@ -30,8 +30,6 @@ aarchup uses GTk+ and libnotify to show a desktop notification if updates are av
           --ftimeout [value]          Program will manually enforce timeout for closing notification.
                                       Do NOT use with --timeout, if --timeout works or without --loop-time [value].
                                       The value for this option should be in minutes.
-          --ignore-disconnect         If this flag is set aarchup will notify you about new updates even if pacman -Sy failed.
-                                      no point in using this without --loop-time.
           --pkg-no-ignore             If this flag is set will not use the IgnorePkg variable from pacman.conf. Without the flag will ignore those
                                       packages. Feel free to add packages names to pacman.conf even if they are from AUR, will cause no harm and will
                                       also ignore it and not show updates.
@@ -79,16 +77,6 @@ Copy the file /usr/share/doc/aarchup/aarchupstartup.example
          $ sudo cp /usr/share/doc/aarchup/aarchupstartup.example /usr/share/aarchup/aarchupstartup.sh
 .PP
 Edit the new file with different options if needed. Include --aur if you want to check for updates in AUR(you will need cower installed).
-You will also need to allow pacman -Sy to be executed without asking for sudo's password.
-Edit visudo:
-.PP
-         $ sudo visudo
-.PP
-Add the following line to the end of the file.
-.PP
-         user ALL=(ALL) NOPASSWD: /usr/bin/pacman -Sy
-.PP
-where user is your username.
 
 Archup will run on next boot or you can manually start it running /usr/share/aarchup/aarchupstartup.sh
 

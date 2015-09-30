@@ -28,7 +28,7 @@
 
 #define AUR_HEADER "AUR updates:\n"
 #define STREQ !strcmp
-#define VERSION_NUMBER "1.6.8"
+#define VERSION_NUMBER "1.8"
 
 
 /* Parse cower -u output. 
@@ -188,9 +188,9 @@ void read_update_pipe(FILE *pac_out, int *update_count, int max_number_out, int 
         if(aur)
             parse(line);
         else{
-            if(strlen(line)+2 <= BUFSIZ){
+            if(strlen(line)+1 <= BUFSIZ){
                 line[strlen(line)-1] = '\0';
-                strcat(line, "+\n");
+                strcat(line, "\n");
             }
         }
         if(debug){
@@ -219,7 +219,7 @@ int print_help(char *name)
     printf("Usage: %s [options]\n\n",name);
     printf("Options:\n");
     printf("          --command|-c [value]        Set the command which gives out the list of updates.\n");
-    printf("                                      The default is /usr/bin/pacman -Qu\n");
+    printf("                                      The default is /usr/bin/checkupdates\n");
     printf("          --icon|-p [value]           Shows the icon, whose path has been given as value, in the notification.\n");
     printf("                                      By default no icon is shown.\n");
     printf("          --maxentries|-m [value]     Set the maximum number of packages which shall be displayed in the notification.\n");
@@ -241,8 +241,6 @@ int print_help(char *name)
     printf("          --ftimeout|-f [value]       Program will manually enforce timeout for closing notification.\n");
     printf("                                      Do NOT use with --timeout, if --timeout works or without --loop-time [value].\n");
     printf("                                      The value for this option should be in minutes.\n");
-    printf("          --ignore-disconnect         If this flag is set aarchup will notify you about new updates even if pacman -Sy failed.\n");
-    printf("                                      no point in using this without --loop-time.\n");
     printf("          --pkg-no-ignore             If this flag is set will not use the IgnorePkg variable from pacman.conf. Without the flag will ignore those\n");
     printf("                                      packages\n");
     printf("\nMore informations can be found in the manpage.\n");
@@ -277,13 +275,12 @@ int main(int argc, char **argv)
     static int help_flag = 0;
     static int version_flag = 0;
     static int aur = 0;
-    static int ignore_disc_flag = 0;
     static int ignore_pkg_flag = 1;
     bool will_loop = FALSE, debug = FALSE, argv_dealloc = FALSE;
     /* Sets the urgency-level to normal. */
     urgency = NOTIFY_URGENCY_NORMAL;
     /* The default command to get a list of packages to update. */
-    char *command = "/usr/bin/pacman -Qu";
+    char *command = "/usr/bin/checkupdates";
     /* The default icon to show: none */
     gchar *icon = NULL;
     
@@ -370,7 +367,6 @@ int main(int argc, char **argv)
             {"aur", no_argument, &aur, 1},
             {"ftimeout", required_argument, 0, 'f'},
             {"debug", no_argument, 0, 'd'},
-            {"ignore-disconnect", no_argument, &ignore_disc_flag, 1},
             {"pkg-no-ignore", no_argument, &ignore_pkg_flag, 0},
             {0, 0, 0, 0},
         };
@@ -501,8 +497,6 @@ int main(int argc, char **argv)
         print_help(argv[0]);
     if(debug && aur)
         printf("DEBUG(info): aur is on\n");
-    if(debug && ignore_disc_flag)
-        printf("DEBUG(info): ignore-diconnect is on. Will ignore 'pacman -Sy' failure.\n");
     if(debug && !ignore_pkg_flag)
         printf("DEBUG(info): ignoring pacman.conf IgnorePkg variable.\n");
 
@@ -530,29 +524,7 @@ int main(int argc, char **argv)
     int ign_pkg_size;
 
     do{
-        /* If isn't set to loop than probably pacman's database was alreald synced  */
-        if(will_loop){
-            if(debug)
-                printf("DEBUG(info): loop-time is on, running pacman -Sy\n");
-            int success = system("sudo pacman -Sy &> /dev/null");
-            if(success != 0){
-                if(debug){
-                    printf("DEBUG(error): failed to do pacman -Sy\n");
-                    printf("DEBUG(error): it returned %i\n", success);
-                }
-                if(!ignore_disc_flag){
-                    if(debug){
-                        time(&now);
-                        printf("DEBUG(info): Time now %s", ctime(&now));
-                        printf("DEBUG(info): Next run will be in %i minutes\n", (loop_time-offset)/60);
-                    }
-                    fflush(stdout); // Make sure that all output was printed(needed if output is redirected to a log file)
-                    sleep(loop_time-offset);
-                    offset = 0;
-                }
-            }
-        }
-        /* We get stdout of pacman -Qu into the pac_out stream.
+        /* We get stdout of checkupdates into the pac_out stream.
            Remember we can't use fseek(stream,0,SEEK_END) with 
            popen-streams, thus we are reading BUFSIZ sized lines
            and allocate dynamically more memory for our output. */  
@@ -574,7 +546,30 @@ int main(int argc, char **argv)
         if(ignore_pkg_flag && IgnorePkg)
             free_mat(&IgnorePkg, ign_pkg_size);
         /* We close the popen stream if we don't need it anymore. */
-        pclose(pac_out);
+        int ret_status = pclose(pac_out);
+
+        if(ret_status != 0){
+            if(debug){
+                printf("DEBUG(error): failed to checkupdates\n");
+                printf("DEBUG(error): it returned %i\n", ret_status);
+            }
+            if(will_loop){
+                if(debug){
+                    time(&now);
+                    printf("DEBUG(info): Time now %s", ctime(&now));
+                    printf("DEBUG(info): Next run will be in %i minutes\n", (loop_time-offset)/60);
+                }
+                fflush(stdout); // Make sure that all output was printed(needed if output is redirected to a log file)
+                sleep(loop_time-offset);
+                continue;
+                offset = 0;
+            } else {
+                printf("Failed to run checkupdates\n");
+                return 1;
+            }
+        }
+
+
         /* aur check */
         if(aur && i < max_number_out){
             if(debug)
