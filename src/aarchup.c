@@ -28,7 +28,7 @@
 
 #define AUR_HEADER "AUR updates:\n"
 #define STREQ !strcmp
-#define VERSION_NUMBER "1.8"
+#define VERSION_NUMBER "1.8.1"
 
 
 /* Parse cower -u output. 
