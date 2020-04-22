@@ -1,5 +1,7 @@
 # Aarchup
 
+:warning: No longer mantained. See the new one here: https://aur.archlinux.org/packages/aarchup/
+
 aarchup (https://github.com/aericson/aarchup) is a small C application which informs the user when system-updates for Archlinux are available. It's licenced under the GPLv3. In contrast to other update notifiers aarchup is intended to be lightweight and just do what it should: notify about possible updates.
 It is forked from Rorschach's archup (http://www.nongnu.org/archup/).
 
