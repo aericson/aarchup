@@ -95,7 +95,13 @@ Now every hour your package database will get updated and after that aarchup wil
 
 \fIother Intervals\fR
 
-If you want to execute aarchup at other intervals than hourly you are free to do so simply by editing the file /etc/systemd/system/aarchup.timer
+If you want to execute aarchup at other intervals than hourly, you can override the settings of the systemd timer unit by either ...
+.PP
+* Using the \fisystemctl --user edit $UNITNAME\fr command to interactively create an override file for the unit in \fi~/.config/systemd/user/$UNITNAME.d/\fr where $UNITNAME stands for the name of the systemd unit. 
+
+* Or by creating an override file in the aforementioned directory, followed by executing \fisystemctl --user daemon-reload\fr
+.PP
+After you made the change, you need to restart the unit as well.
 
 Some hints on this:
  * you can adjust the timeout value, before the notification will disappear with the --timeout option of aarchup

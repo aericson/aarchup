@@ -41,16 +41,16 @@ install:
 	install -Dm774 archlogo.svg $(DESTDIR)/usr/share/aarchup/archlogo.svg
 	install -Dm774 archlogo.png $(DESTDIR)/usr/share/aarchup/archlogo.png
 	install -Dm755 systemd_files/noxaarchup.sh $(DESTDIR)/usr/share/aarchup/noxaarchup.sh
-	install -Dm644 systemd_files/aarchup.timer $(DESTDIR)/etc/systemd/system/aarchup.timer
-	install -Dm644 systemd_files/aarchup.service $(DESTDIR)/etc/systemd/system/aarchup.service
+	install -Dm644 systemd_files/aarchup.timer $(DESTDIR)/usr/lib/systemd/user/aarchup.timer
+	install -Dm644 systemd_files/aarchup.service $(DESTDIR)/usr/lib/systemd/user/aarchup.service
 
 uninstall:
 	rm -f $(DESTDIR)/usr/bin/aarchup
 	rm -rf $(DESTDIR)/usr/share/doc/aarchup
 	rm -f $(DESTDIR)/usr/share/man/man1/aarchup.1.gz
 	rm -rf $(DESTDIR)/usr/share/aarchup
-	rm -f $(DESTDIR)/etc/systemd/system/aarchup.timer
-	rm -f $(DESTDIR)/etc/systemd/system/aarchup.service
+	rm -f $(DESTDIR)/usr/lib/systemd/user/aarchup.timer
+	rm -f $(DESTDIR)/usr/lib/systemd/user/aarchup.service
 
 distclean:
 	rm -rf aarchup autoscan.log autom4te.cache Makefile configure.scan configure config.*
